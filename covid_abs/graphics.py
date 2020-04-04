@@ -59,6 +59,7 @@ def color3(a):
 
 
 def update_statistics(sim, statistics):
+
     stats1 = sim.get_statistics(kind='info')
     statistics['info'].append(stats1)
     df1 = pd.DataFrame(statistics['info'], columns=[k for k in stats1.keys()])
@@ -71,6 +72,13 @@ def update_statistics(sim, statistics):
 
 
 def clear(scat, linhas1, linhas2):
+    """
+
+    :param scat:
+    :param linhas1:
+    :param linhas2:
+    :return:
+    """
     for linha1 in linhas1.values():
         linha1.set_data([], [])
 
@@ -87,6 +95,16 @@ def clear(scat, linhas1, linhas2):
 
 
 def update(sim, scat, linhas1, linhas2, statistics):
+    """
+    Execute an iteration of the simulation and update the animation graphics
+
+    :param sim:
+    :param scat:
+    :param linhas1:
+    :param linhas2:
+    :param statistics:
+    :return:
+    """
     sim.execute()
     scat.set_facecolor([color2(a) for a in sim.get_population()])
     scat.set_offsets(sim.get_positions())
@@ -109,6 +127,13 @@ def update(sim, scat, linhas1, linhas2, statistics):
 
 
 def execute_simulation(sim, **kwargs):
+    """
+
+    :param sim: a Simulation or MultiopulationSimulation object
+    :param iterations: number of interations of the simulation
+    :param  iteration_time: time (in miliseconds) between each iteration
+    :return: an animation object
+    """
     statistics = {'info': [], 'ecom': []}
 
     fig, ax = plt.subplots(nrows=1, ncols=3, figsize=[20, 5])
@@ -144,7 +169,7 @@ def execute_simulation(sim, **kwargs):
     ax[1].set_ylabel("% of Population")
 
     handles, labels = ax[1].get_legend_handles_labels()
-    lgd = ax[1].legend(handles, labels, loc=2, bbox_to_anchor=(0, 0))
+    lgd = ax[1].legend(handles, labels, loc='top right') #2, bbox_to_anchor=(0, 0))
 
     linhas2 = {}
 
@@ -158,7 +183,7 @@ def execute_simulation(sim, **kwargs):
     ax[2].set_ylabel("Wealth")
 
     handles, labels = ax[2].get_legend_handles_labels()
-    lgd = ax[2].legend(handles, labels, loc=2, bbox_to_anchor=(1, 1))
+    lgd = ax[2].legend(handles, labels, loc='top right') #2, bbox_to_anchor=(1, 1))
 
     animate = lambda i: update(sim, scat, linhas1, linhas2, statistics)
 
@@ -168,4 +193,9 @@ def execute_simulation(sim, **kwargs):
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=frames, interval=iteration_time, blit=True)
 
     return anim
+
+
+def save_gif(anim, file):
+    anim.save(file, writer='imagemagick', fps=60)
+
 
