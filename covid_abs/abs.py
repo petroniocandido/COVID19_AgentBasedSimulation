@@ -140,8 +140,7 @@ class Simulation(object):
                 agent.status = Status.Recovered_Immune
                 agent.infected_status = InfectionSeverity.Asymptomatic
 
-        result_ecom = np.random.rand(1)
-        agent.wealth -= result_ecom * self.minimum_expense * basic_income[agent.social_stratum]
+        agent.wealth -= self.minimum_expense * basic_income[agent.social_stratum]
 
     def execute(self):
         mov_triggers = [k for k in self.triggers_population if k['attribute'] == 'move']

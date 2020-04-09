@@ -160,10 +160,11 @@ def execute_simulation(sim, **kwargs):
 
     linhas1 = {}
 
-    ax[1].axhline(y=sim.critical_limit, c="black", ls='--')
+    ax[1].axhline(y=sim.critical_limit, c="black", ls='--', label='Critical limit')
 
     for col in df1.columns.values:
-        linhas1[col], = ax[1].plot(df1.index.values, df1[col].values, c=color1(col), label=col)
+        if col != 'Asymptomatic':
+            linhas1[col], = ax[1].plot(df1.index.values, df1[col].values, c=color1(col), label=col)
 
     ax[1].set_xlabel("Nº of Days")
     ax[1].set_ylabel("% of Population")
