@@ -3,7 +3,7 @@ from covid_abs.abs import *
 from covid_abs.common import *
 from covid_abs.experiments import *
 
-batch_experiment(10, 80, "scenario1.csv",
+batch_experiment(50, 80, "scenario1.csv",
                  # Percentage of infected in initial population
                  initial_infected_perc=0.02,
                  # Percentage of immune in initial population
@@ -26,7 +26,7 @@ batch_experiment(10, 80, "scenario1.csv",
                  }
                  )
 
-batch_experiment(10, 80, "scenario2.csv",
+batch_experiment(50, 80, "scenario2.csv",
                  # Percentage of infected in initial population
                  initial_infected_perc=0.02,
                  # Percentage of immune in initial population
@@ -49,7 +49,7 @@ batch_experiment(10, 80, "scenario2.csv",
                  }
                  )
 
-batch_experiment(10, 80, "scenario3.csv",
+batch_experiment(50, 80, "scenario3.csv",
                  # Percentage of infected in initial population
                  initial_infected_perc=0.02,
                  # Percentage of immune in initial population
@@ -72,7 +72,7 @@ batch_experiment(10, 80, "scenario3.csv",
                  }
                  )
 
-batch_experiment(10, 80, "scenario4.csv",
+batch_experiment(50, 120, "scenario4.csv",
                  length=100,
                  height=100,
                  initial_infected_perc=0.02,
@@ -84,7 +84,7 @@ batch_experiment(10, 80, "scenario4.csv",
                      Status.Recovered_Immune: 5,
                      Status.Infected: 5
                  },
-                 trigger_simulation=[
+                 triggers_simulation=[
                      {'condition': lambda a: a.get_statistics()['Infected'] >= .2,
                       'attribute': 'amplitudes',
                       'action': lambda a: {
@@ -100,6 +100,7 @@ batch_experiment(10, 80, "scenario4.csv",
                           Status.Infected: 5
                       }}
                  ])
+
 
 sim1 = Simulation(initial_infected_perc=0.02,
                   length=100,
@@ -125,7 +126,7 @@ sim2 = Simulation(initial_infected_perc=0.02,
                       Status.Infected: 1
                   })
 
-batch_experiment(10, 80, "scenario5.csv", simulation_type=MultiPopulationSimulation,
+batch_experiment(50, 80, "scenario5.csv", simulation_type=MultiPopulationSimulation,
                  length=200,
                  height=200,
                  contagion_distance=5.,
