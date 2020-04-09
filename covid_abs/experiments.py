@@ -16,7 +16,7 @@ def plot_mean_std(ax, mean, std, legend, color=None):
     ax.fill_between(range(l), ub, lb,
                      color=color, alpha=.5)
     # plot the mean on top
-    ax.plot(mean, color, legend=legend)
+    ax.plot(mean, color, label=legend)
 
 
 def plot_batch_results(df):
@@ -65,7 +65,7 @@ def plot_batch_results(df):
       n_mean = np.interp(means, (mmin, mmax), (0, 1))
       std = df[(df["Metric"] == col)]['Std'].values
       n_std = np.interp(std, (smin, smax), (0, 1))
-      ax[1].plot(n_mean, legend=legend_ecom[col])
+      ax[1].plot(n_mean, label=legend_ecom[col])
       #std = np.log10(df[(df["Metric"] == col)]['Std'].values)
       #plot_mean_std(ax[1], n_mean, n_std, color=color3(col))
 

@@ -1,8 +1,18 @@
+import pandas as pd
+import matplotlib as plt
+
 from covid_abs.agents import *
 from covid_abs.abs import *
 from covid_abs.common import *
 from covid_abs.experiments import *
 
+df = pd.read_csv('scenario1.csv')
+
+plot_batch_results(df)
+
+plt.show()
+
+"""
 batch_experiment(50, 80, "scenario1.csv",
                  # Percentage of infected in initial population
                  initial_infected_perc=0.02,
@@ -135,3 +145,4 @@ batch_experiment(50, 80, "scenario5.csv", simulation_type=MultiPopulationSimulat
                  positions=[(0, 0), (80, 80)],
                  total_population=160
                  )
+"""
