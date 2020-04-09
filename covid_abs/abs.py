@@ -21,8 +21,8 @@ class Simulation(object):
         self.minimum_income = kwargs.get("minimum_income", 1.0)
         self.minimum_expense = kwargs.get("minimum_expense", 1.0)
         self.statistics = None
-        self.triggers_simulation = []
-        self.triggers_population = []
+        self.triggers_simulation = kwargs.get("triggers_simulation", [])
+        self.triggers_population = kwargs.get("triggers_population", [])
 
     def get_population(self):
         return self.population
@@ -224,9 +224,9 @@ class Simulation(object):
 class MultiPopulationSimulation(Simulation):
     def __init__(self, **kwargs):
         super(MultiPopulationSimulation, self).__init__(**kwargs)
-        self.simulations = []
-        self.positions = []
-        self.total_population = 0
+        self.simulations = kwargs.get('simulations',[])
+        self.positions = kwargs.get('positions',[])
+        self.total_population = kwargs.get('total_population',0)
 
     def get_population(self):
         population = []
