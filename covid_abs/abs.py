@@ -70,11 +70,15 @@ class Simulation(object):
             for agent in filter(lambda x: x.social_stratum == quintil and x.age >= 18, self.population):
                 agent.wealth = share
 
-    def contact(self, agent1, agent2):
+    def contact(self, agent1, agent2, triggers=[]):
+        for trigger in triggers:
+            if trigger['condition'](agent1, agent2):
+                agent1.status = trigger['action'](agent1)
+                return
 
         if agent1.status == Status.Susceptible and agent2.status == Status.Infected:
-            teste_contagio = np.random.random()
-            if teste_contagio <= self.contagion_rate:
+            test_contagion = np.random.random()
+            if test_contagion <= self.contagion_rate:
                 agent1.status = Status.Infected
 
     def move(self, agent, triggers=[]):
@@ -144,7 +148,8 @@ class Simulation(object):
 
     def execute(self):
         mov_triggers = [k for k in self.triggers_population if k['attribute'] == 'move']
-        other_triggers = [k for k in self.triggers_population if k['attribute'] != 'move']
+        con_triggers = [k for k in self.triggers_population if k['attribute'] == 'contact']
+        other_triggers = [k for k in self.triggers_population if k['attribute'] != 'move' and k['attribute'] != 'contact']
 
         for agent in self.population:
             self.move(agent, triggers=mov_triggers)
@@ -170,8 +175,8 @@ class Simulation(object):
         for par in contacts:
             ai = self.population[par[0]]
             aj = self.population[par[1]]
-            self.contact(ai, aj)
-            self.contact(aj, ai)
+            self.contact(ai, aj, triggers=con_triggers)
+            self.contact(aj, ai, triggers=con_triggers)
 
         if len(self.triggers_simulation) > 0:
             for trigger in self.triggers_simulation:
