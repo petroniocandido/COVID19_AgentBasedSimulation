@@ -1,3 +1,7 @@
+"""
+Common code for simulation experiments in batch
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -20,6 +24,10 @@ def plot_mean_std(ax, mean, std, legend, color=None):
 
 
 def plot_batch_results(df):
+    """
+    Plot the results of a batch executions contained in the given DataFrame
+    :param df: Pandas DataFrame returned by batch_experiment method
+    """
     metrics = df['Metric'].unique()
 
     health_metrics = [k for k in metrics if "Q" not in k and "Asym" not in k]

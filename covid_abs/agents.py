@@ -1,3 +1,7 @@
+"""
+Base codes for Agent and its internal state
+"""
+
 from enum import Enum
 
 
@@ -12,27 +16,46 @@ class Status(Enum):
 
 
 class InfectionSeverity(Enum):
+    """
+    The Severity of the Infected agents
+    """
     Asymptomatic = 'a'
     Hospitalization = 'h'
     Severe = 'g'
 
 
 class Agent(object):
-  def __init__(self, **kwargs):
-    self.x = kwargs.get('x',0)
-    self.y = kwargs.get('y',0)
-    self.status = kwargs.get('status',Status.Susceptible)
-    self.infected_status = InfectionSeverity.Asymptomatic
-    self.infected_time = 0
-    self.age = kwargs.get('age',0)
-    self.social_stratum = kwargs.get('social_stratum',0)
-    self.wealth = kwargs.get('wealth',0.0)
+    """
+    The container of Agent's attributes and status
+    """
+    def __init__(self, **kwargs):
+        self.x = kwargs.get('x', 0)
+        """The horizontal position of the agent in the shared environment"""
+        self.y = kwargs.get('y', 0)
+        """The vertical position of the agent in the shared environment"""
+        self.status = kwargs.get('status', Status.Susceptible)
+        """The health status of the agent"""
+        self.infected_status = InfectionSeverity.Asymptomatic
+        """The infection severity of the agent"""
+        self.infected_time = 0
+        """The time (in days) after the infection"""
+        self.age = kwargs.get('age', 0)
+        """The age (in years) of the agent"""
+        self.social_stratum = kwargs.get('social_stratum', 0)
+        """The social stratum (or their quintile in wealth distribution) of the agent"""
+        self.wealth = kwargs.get('wealth', 0.0)
+        """The current wealth of the agent"""
 
-  def get_description(self):
-    if self.status == Status.Infected:
-      return "{}({})".format(self.status.name, self.infected_status.name)
-    else:
-      return self.status.name
+    def get_description(self):
+        """
+        Get a simplified description of the agent health status
 
-  def __str__(self):
-    return str(self.status.name)
+        :return: string
+        """
+        if self.status == Status.Infected:
+            return "{}({})".format(self.status.name, self.infected_status.name)
+        else:
+            return self.status.name
+
+    def __str__(self):
+        return str(self.status.name)

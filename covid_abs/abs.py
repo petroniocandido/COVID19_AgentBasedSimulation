@@ -1,4 +1,7 @@
-import numpy as np
+"""
+Main code for Agent Based Simulation
+"""
+
 from covid_abs.agents import Status, InfectionSeverity, Agent
 from covid_abs.common import *
 
@@ -6,40 +9,86 @@ from covid_abs.common import *
 class Simulation(object):
     def __init__(self, **kwargs):
         self.population = []
+        '''The population of agents'''
         self.population_size = kwargs.get("population_size", 20)
+        '''The number of agents'''
         self.length = kwargs.get("length", 10)
+        '''The length of the shared environment'''
         self.height = kwargs.get("height", 10)
+        '''The height of the shared environment'''
         self.initial_infected_perc = kwargs.get("initial_infected_perc", 0.05)
+        '''The initial percent of population which starts the simulation with the status Infected'''
         self.initial_immune_perc = kwargs.get("initial_immune_perc", 0.05)
+        '''The initial percent of population which starts the simulation with the status Immune'''
         self.contagion_distance = kwargs.get("contagion_distance", 1.)
+        '''The minimal distance considered as contact (or exposition)'''
         self.contagion_rate = kwargs.get("contagion_rate", 0.9)
+        '''The probability of contagion given two agents were in contact'''
         self.critical_limit = kwargs.get("critical_limit", 0.6)
+        '''The percent of population which the Health System can afford'''
         self.amplitudes = kwargs.get('amplitudes',
                                      {Status.Susceptible: 5,
                                       Status.Recovered_Immune: 5,
                                       Status.Infected: 5})
+        '''A dictionary with the average mobility of agents inside the shared environment for each status'''
         self.minimum_income = kwargs.get("minimum_income", 1.0)
+        '''The base (or minimum) daily income, related to the most poor wealth quintile'''
         self.minimum_expense = kwargs.get("minimum_expense", 1.0)
+        '''The base (or minimum) daily expense, related to the most poor wealth quintile'''
         self.statistics = None
+        '''A dictionary with the population statistics for the current iteration'''
         self.triggers_simulation = kwargs.get("triggers_simulation", [])
+        "A dictionary with conditional changes in the Simulation attributes"
         self.triggers_population = kwargs.get("triggers_population", [])
+        "A dictionary with conditional changes in the Agent attributes"
 
     def get_population(self):
+        """
+        Return the population in the current iteration
+
+        :return: a list with the current agent instances
+        """
         return self.population
 
     def set_population(self, pop):
+        """
+        Update the population in the current iteration
+        """
         self.population = pop
 
     def set_amplitudes(self, amp):
         self.amplitudes = amp
 
     def append_trigger_simulation(self, condition, attribute, action):
+        """
+        Append a conditional change in the Simulation attributes
+
+        :param condition: a lambda function that receives the current simulation instance and
+        returns a boolean
+        :param attribute: string, the attribute name of the Simulation which will be changed
+        :param action: a lambda function that receives the current simulation instance and returns
+        the new value of the attribute
+        """
         self.triggers_simulation.append({'condition': condition, 'attribute': attribute, 'action': action})
 
     def append_trigger_population(self, condition, attribute, action):
+        """
+        Append a conditional change in the population attributes
+
+        :param condition: a lambda function that receives the current agent instance and returns a boolean
+        :param attribute: string, the attribute name of the agent which will be changed
+        :param action: a lambda function that receives the current agent instance and returns the new
+        value of the attribute
+        """
         self.triggers_population.append({'condition': condition, 'attribute': attribute, 'action': action})
 
     def create_agent(self, status):
+        """
+        Create a new agent with the given status
+
+        :param status: a value of agents.Status enum
+        :return: the newly created agent
+        """
         x = np.clip(int(self.length / 2 + (np.random.randn(1) * (self.length / 3))),
                     0, self.length)
         y = np.clip(int(self.height / 2 + (np.random.randn(1) * (self.height / 3))),
@@ -49,6 +98,10 @@ class Simulation(object):
         self.population.append(Agent(x=x, y=y, age=age, status=status, social_stratum=social_stratum))
 
     def initialize(self):
+        """
+        Initializate the Simulation by creating its population of agents
+        """
+
         # Initial infected population
         for i in np.arange(0, int(self.population_size * self.initial_infected_perc)):
             self.create_agent(Status.Infected)
@@ -66,11 +119,17 @@ class Simulation(object):
         for quintil in [0, 1, 2, 3, 4]:
             total = lorenz_curve[quintil] * wealth
             qty = max(1.0, np.sum([1 for a in self.population if a.social_stratum == quintil and a.age >= 18]))
-            share = total / qty
+            ag_share = total / qty
             for agent in filter(lambda x: x.social_stratum == quintil and x.age >= 18, self.population):
-                agent.wealth = share
+                agent.wealth = ag_share
 
     def contact(self, agent1, agent2):
+        """
+        Performs the actions needed when two agents get in touch.
+
+        :param agent1: an instance of agents.Agent
+        :param agent2: an instance of agents.Agent
+        """
 
         if agent1.status == Status.Susceptible and agent2.status == Status.Infected:
             teste_contagio = np.random.random()
@@ -78,9 +137,15 @@ class Simulation(object):
                 agent1.status = Status.Infected
 
     def move(self, agent, triggers=[]):
+        """
+        Performs the actions related with the movement of the agents in the shared environment
 
-        if agent.status == Status.Death or (agent.status == Status.Infected \
-                                            and (agent.infected_status == InfectionSeverity.Hospitalization \
+        :param agent: an instance of agents.Agent
+        :param triggers: the list of population triggers related to the movement
+        """
+
+        if agent.status == Status.Death or (agent.status == Status.Infected
+                                            and (agent.infected_status == InfectionSeverity.Hospitalization
                                                  or agent.infected_status == InfectionSeverity.Severe)):
             return
 
@@ -107,6 +172,11 @@ class Simulation(object):
         agent.wealth += dist * result_ecom * self.minimum_expense * basic_income[agent.social_stratum]
 
     def update(self, agent):
+        """
+        Update the status of the agent
+
+        :param agent: an instance of agents.Agent
+        """
 
         if agent.status == Status.Death:
             return
@@ -143,6 +213,10 @@ class Simulation(object):
         agent.wealth -= self.minimum_expense * basic_income[agent.social_stratum]
 
     def execute(self):
+        """
+        Execute a complete iteration cycle of the Simulation, executing all actions for each agent
+        in the population and updating the statistics
+        """
         mov_triggers = [k for k in self.triggers_population if k['attribute'] == 'move']
         other_triggers = [k for k in self.triggers_population if k['attribute'] != 'move']
 
@@ -182,15 +256,28 @@ class Simulation(object):
         self.statistics = None
 
     def get_positions(self):
+        """Return the list of x,y positions for all agents"""
         return [[a.x, a.y] for a in self.population]
 
     def get_description(self, complete=False):
+        """
+        Return the list of Status and InfectionSeverity for all agents
+
+        :param complete: a flag indicating if the list must contain the InfectionSeverity (complete=True)
+        :return: a list of strings with the Status names
+        """
         if complete:
             return [a.get_description() for a in self.population]
         else:
             return [a.status.name for a in self.population]
 
     def get_statistics(self, kind='info'):
+        """
+        Calculate and return the dictionary of the population statistics for the current iteration.
+
+        :param kind: 'info' for health statiscs, 'ecom' for economic statistics and None for all statistics
+        :return: a dictionary
+        """
         if self.statistics is None:
             self.statistics = {}
             for status in Status:
@@ -199,11 +286,12 @@ class Simulation(object):
 
             for infected_status in InfectionSeverity:
                 self.statistics[infected_status.name] = np.sum([1 for a in self.population if
-                                                                a.infected_status == infected_status and a.status != Status.Death]) / self.population_size
+                                                                a.infected_status == infected_status and
+                                                                a.status != Status.Death]) / self.population_size
 
             for quintil in [0, 1, 2, 3, 4]:
                 self.statistics['Q{}'.format(quintil + 1)] = np.sum(
-                    [a.wealth for a in self.population if a.social_stratum == quintil \
+                    [a.wealth for a in self.population if a.social_stratum == quintil
                      and a.age >= 18 and a.status != Status.Death])
 
         return self.filter_stats(kind)
@@ -223,9 +311,9 @@ class Simulation(object):
 class MultiPopulationSimulation(Simulation):
     def __init__(self, **kwargs):
         super(MultiPopulationSimulation, self).__init__(**kwargs)
-        self.simulations = kwargs.get('simulations',[])
-        self.positions = kwargs.get('positions',[])
-        self.total_population = kwargs.get('total_population',0)
+        self.simulations = kwargs.get('simulations', [])
+        self.positions = kwargs.get('positions', [])
+        self.total_population = kwargs.get('total_population', 0)
 
     def get_population(self):
         population = []
@@ -255,7 +343,7 @@ class MultiPopulationSimulation(Simulation):
                     for j in np.arange(0, self.simulations[n].population_size):
                         aj = self.simulations[n].get_population()[j]
 
-                        if np.sqrt(((ai.x + self.positions[m][0]) - (aj.x + self.positions[n][0])) ** 2 + \
+                        if np.sqrt(((ai.x + self.positions[m][0]) - (aj.x + self.positions[n][0])) ** 2 +
                                    ((ai.y + self.positions[m][1]) - (
                                            aj.y + self.positions[n][1])) ** 2) <= self.contagion_distance:
                             self.simulations[m].contact(ai, aj)
@@ -300,8 +388,8 @@ class MultiPopulationSimulation(Simulation):
             for quintil in [0, 1, 2, 3, 4]:
                 for simulation in self.simulations:
                     key = 'Q{}'.format(quintil + 1)
-                    self.statistics[key] = np.sum([a.wealth for a in simulation.get_population() \
-                                                   if a.social_stratum == quintil and a.age >= 18 \
+                    self.statistics[key] = np.sum([a.wealth for a in simulation.get_population()
+                                                   if a.social_stratum == quintil and a.age >= 18
                                                    and a.status != Status.Death])
 
         return self.filter_stats(kind)

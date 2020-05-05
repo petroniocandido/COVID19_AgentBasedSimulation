@@ -1,3 +1,7 @@
+"""
+Auxiliary methods for plotting the simulations
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,9 +14,11 @@ from matplotlib import animation, rc
 from IPython.display import HTML
 
 legend_ecom = {'Q1': 'Most Poor', 'Q2': 'Poor', 'Q3': 'Working Class', 'Q4': 'Rich', 'Q5': 'Most Rich'}
+"""Legend for wealth distribution quintiles"""
 
 
 def color1(s):
+    """Plotting colors by status string"""
     if s == 'Susceptible':
         return 'lightblue'
     elif s == 'Infected':
@@ -30,6 +36,7 @@ def color1(s):
 
 
 def color2(agent):
+    """Plotting colors by Status and InfectionSeverity"""
     if agent.status == Status.Susceptible:
         return 'lightblue'
     elif agent.status == Status.Infected:
@@ -46,6 +53,7 @@ def color2(agent):
 
 
 def color3(a):
+    """Plotting colors by wealth distribution quintiles"""
     if a == 'Q1':
         return 'red'
     elif a == 'Q2':
@@ -59,6 +67,7 @@ def color3(a):
 
 
 def update_statistics(sim, statistics):
+    """Store the iteration statistics"""
 
     stats1 = sim.get_statistics(kind='info')
     statistics['info'].append(stats1)
@@ -128,6 +137,7 @@ def update(sim, scat, linhas1, linhas2, statistics):
 
 def execute_simulation(sim, **kwargs):
     """
+    Execute a simulation and plot its results
 
     :param sim: a Simulation or MultiopulationSimulation object
     :param iterations: number of interations of the simulation
