@@ -42,6 +42,8 @@ class Simulation(object):
         self.triggers_population = kwargs.get("triggers_population", [])
         "A dictionary with conditional changes in the Agent attributes"
 
+        self.total_wealth = kwargs.get("total_wealth", 10 ** 4)
+
     def get_population(self):
         """
         Return the population in the current iteration
@@ -82,6 +84,14 @@ class Simulation(object):
         """
         self.triggers_population.append({'condition': condition, 'attribute': attribute, 'action': action})
 
+    def random_position(self):
+        x = np.clip(int(self.length / 2 + (np.random.randn(1) * (self.length / 3))),
+                    0, self.length)
+        y = np.clip(int(self.height / 2 + (np.random.randn(1) * (self.height / 3))),
+                    0, self.height)
+
+        return x, y
+
     def create_agent(self, status):
         """
         Create a new agent with the given status
@@ -89,10 +99,8 @@ class Simulation(object):
         :param status: a value of agents.Status enum
         :return: the newly created agent
         """
-        x = np.clip(int(self.length / 2 + (np.random.randn(1) * (self.length / 3))),
-                    0, self.length)
-        y = np.clip(int(self.height / 2 + (np.random.randn(1) * (self.height / 3))),
-                    0, self.height)
+        x, y = self.random_position()
+
         age = int(np.random.beta(2, 5, 1) * 100)
         social_stratum = int(np.random.rand(1) * 100 // 20)
         self.population.append(Agent(x=x, y=y, age=age, status=status, social_stratum=social_stratum))
@@ -115,12 +123,11 @@ class Simulation(object):
             self.create_agent(Status.Susceptible)
 
         # Share the common wealth of 10^4 among the population, according each agent social stratum
-        wealth = 10 ** 4
-        for quintil in [0, 1, 2, 3, 4]:
-            total = lorenz_curve[quintil] * wealth
+        for quintile in [0, 1, 2, 3, 4]:
+            total = lorenz_curve[quintile] * self.total_wealth
             qty = max(1.0, np.sum([1 for a in self.population if a.social_stratum == quintil and a.age >= 18]))
             ag_share = total / qty
-            for agent in filter(lambda x: x.social_stratum == quintil and x.age >= 18, self.population):
+            for agent in filter(lambda x: x.social_stratum == quintile and x.age >= 18, self.population):
                 agent.wealth = ag_share
 
     def contact(self, agent1, agent2):

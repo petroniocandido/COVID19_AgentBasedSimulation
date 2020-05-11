@@ -5,14 +5,60 @@ from covid_abs.agents import *
 from covid_abs.abs import *
 from covid_abs.common import *
 from covid_abs.experiments import *
+from covid_abs.network import *
 
+sim = GraphSimulation(  # Percentage of infected in initial population
+    initial_infected_perc=0.02,
+    # Percentage of immune in initial population
+    initial_immune_perc=0.01,
+    # Length of simulation environment
+    length=200,
+    # Height of simulation environment
+    height=200,
+    # Size of population
+    population_size=100,
+    # Minimal distance between agents for contagion
+    contagion_distance=1.,
+    # Maximum percentage of population which Healthcare System can handle simutaneously
+    critical_limit=0.05,
+    # Mobility ranges for agents, by Status
+    amplitudes={
+        Status.Susceptible: 5,
+        Status.Recovered_Immune: 5,
+        Status.Infected: 5
+    },
+    total_wealth=1000000,
+    total_business=10
+)
+
+sim.initialize()
+
+from time import sleep
+
+#fig = plt.figure()
+#ax = fig.add_subplot(111)
+plt.show()
+for i in range(1200):
+    sim.execute()
+    #plt.clf()
+    #sleep(1)
+    print(sim.get_statistics())
+    #ax.clear()
+    #plt.set_title("{}".format(i))
+    #draw(sim) #, ax=ax)
+    #plt.show()
+
+
+print("")
+
+"""
 df = pd.read_csv('scenario1.csv')
 
 plot_batch_results(df)
 
 plt.show()
 
-"""
+
 batch_experiment(50, 80, "scenario1.csv",
                  # Percentage of infected in initial population
                  initial_infected_perc=0.02,
