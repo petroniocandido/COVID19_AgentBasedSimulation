@@ -5,49 +5,62 @@ from covid_abs.agents import *
 from covid_abs.abs import *
 from covid_abs.common import *
 from covid_abs.experiments import *
+from covid_abs.graphics import  *
 from covid_abs.network import *
 
 sim = GraphSimulation(  # Percentage of infected in initial population
-    initial_infected_perc=0.02,
+    initial_infected_perc=0.01,
     # Percentage of immune in initial population
     initial_immune_perc=0.01,
     # Length of simulation environment
-    length=200,
+    length=500,
     # Height of simulation environment
-    height=200,
+    height=500,
     # Size of population
     population_size=100,
     # Minimal distance between agents for contagion
-    contagion_distance=1.,
+    contagion_distance=1.5,
     # Maximum percentage of population which Healthcare System can handle simutaneously
     critical_limit=0.05,
     # Mobility ranges for agents, by Status
     amplitudes={
-        Status.Susceptible: 5,
-        Status.Recovered_Immune: 5,
-        Status.Infected: 5
+        Status.Susceptible: 20,
+        Status.Recovered_Immune: 20,
+        Status.Infected: 20
     },
     total_wealth=1000000,
-    total_business=10
+    total_business=10,
+    minimum_income=900.0,
+    minimum_expense=850.0
 )
 
-sim.initialize()
+sim = execute_graphsimulation(sim, iterations=1000)
+plt.plot()
+
+#sim.initialize()
 
 from time import sleep
 
+'''
 #fig = plt.figure()
 #ax = fig.add_subplot(111)
 plt.show()
-for i in range(1200):
+for i in range(1000):
+    #print(i%24, day_of_week(i), day_of_month(i), work_day(i))
     sim.execute()
+    #for bus in sim.business:
+    #    print(bus.num_employees, bus.wealth, bus.social_stratum, bus.price, bus.sales)
+    #break
     #plt.clf()
     #sleep(1)
-    print(sim.get_statistics())
+    if day_of_month(i) % 5 == 0 and i%24 == 0:
+        print("{}".format(sim.get_statistics()))
     #ax.clear()
     #plt.set_title("{}".format(i))
-    #draw(sim) #, ax=ax)
-    #plt.show()
-
+    #
+    draw(sim) #, ax=ax)
+    plt.show()
+'''
 
 print("")
 

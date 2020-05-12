@@ -206,6 +206,170 @@ def execute_simulation(sim, **kwargs):
     return anim
 
 
+def clear_graph(ax, linhas1, linhas2):
+    """
+
+    :param scat:
+    :param linhas1:
+    :param linhas2:
+    :return:
+    """
+    ax.clear()
+
+    for linha1 in linhas1.values():
+        linha1.set_data([], [])
+
+    for linha2 in linhas2.values():
+        linha2.set_data([], [])
+
+    ret = []
+    for l in linhas1.values():
+        ret.append(l)
+    for l in linhas2.values():
+        ret.append(l)
+
+    return tuple(ret)
+
+
+def update_graph(sim, ax, linhas1, linhas2, statistics):
+    """
+    Execute an iteration of the simulation and update the animation graphics
+
+    :param sim:
+    :param scat:
+    :param linhas1:
+    :param linhas2:
+    :param statistics:
+    :return:
+    """
+    sim.execute()
+
+    draw_graph(sim, ax=ax)
+
+    df1, df2 = update_statistics(sim, statistics)
+
+    for col in linhas1.keys():
+        linhas1[col].set_data(df1.index.values, df1[col].values)
+
+    for col in linhas2.keys():
+        linhas2[col].set_data(df2.index.values, df2[col].values)
+
+    ret = []
+    for l in linhas1.values():
+        ret.append(l)
+    for l in linhas2.values():
+        ret.append(l)
+
+    return tuple(ret)
+
+
+def execute_graphsimulation(sim, **kwargs):
+    import networkx as nx
+
+    statistics = {'info': [], 'ecom': []}
+
+    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=[20, 5])
+    # plt.close()
+
+    frames = kwargs.get('iterations', 100)
+    iteration_time = kwargs.get('iteration_time', 250)
+
+    sim.initialize()
+
+    ax[0].set_title('Simulation Environment')
+    ax[0].set_xlim((0, sim.length))
+    ax[0].set_ylim((0, sim.height))
+
+    draw_graph(sim, ax=ax[0])
+
+    df1, df2 = update_statistics(sim, statistics)
+
+    ax[1].set_title('Contagion Evolution')
+    ax[1].set_xlim((0, frames))
+
+    linhas1 = {}
+
+    ax[1].axhline(y=sim.critical_limit, c="black", ls='--', label='Critical limit')
+
+    for col in df1.columns.values:
+        if col != 'Asymptomatic':
+            linhas1[col], = ax[1].plot(df1.index.values, df1[col].values, c=color1(col), label=col)
+
+    ax[1].set_xlabel("Nº of Days")
+    ax[1].set_ylabel("% of Population")
+
+    handles, labels = ax[1].get_legend_handles_labels()
+    lgd = ax[1].legend(handles, labels, loc='top right')  # 2, bbox_to_anchor=(0, 0))
+
+    linhas2 = {}
+
+    ax[2].set_title('Economical Impact')
+    ax[2].set_xlim((0, frames))
+
+    print(df2.columns.values)
+    for col in df2.columns.values:
+        linhas2[col], = ax[2].plot(df2.index.values, df2[col].values, c=color3(col), label=legend_ecom[col])
+
+    ax[2].set_xlabel("Nº of Days")
+    ax[2].set_ylabel("Wealth")
+
+    handles, labels = ax[2].get_legend_handles_labels()
+    lgd = ax[2].legend(handles, labels, loc='top right')  # 2, bbox_to_anchor=(1, 1))
+
+    animate = lambda i: update_graph(sim, ax[0], linhas1, linhas2, statistics)
+
+    init = lambda: clear_graph(ax[0], linhas1, linhas2)
+
+    # animation function. This is called sequentially
+    anim = animation.FuncAnimation(fig, animate, init_func=init, frames=frames, interval=iteration_time, blit=True,
+                                   repeat=True)
+
+    return anim
+
+
+def draw_graph(sim, ax=None, edges=False):
+    import networkx as nx
+    from covid_abs.graphics import color2
+    G = nx.Graph()
+    colors = []
+    pos = {}
+    sizes = []
+
+    G.add_node(sim.healthcare.id, type='healthcare')
+    colors.append('pink')
+    pos[sim.healthcare.id] = [sim.healthcare.x, sim.healthcare.y]
+    sizes.append(30)
+
+    for house in sim.houses:
+        G.add_node(house.id, type='house')
+        colors.append('darkblue')
+        pos[house.id] = [house.x, house.y]
+        sizes.append(30)
+
+    for bus in sim.business:
+        G.add_node(bus.id, type='business')
+        colors.append('darkred')
+        pos[bus.id] = [bus.x, bus.y]
+        sizes.append(30)
+
+    for person in sim.population:
+        G.add_node(person.id, type='person')
+        colors.append(color2(person))
+        pos[person.id] = [person.x, person.y]
+        sizes.append(10)
+
+    if edges:
+        for house in sim.houses:
+            for person in house.homemates:
+                G.add_edge(house.id, person.id)
+
+        for bus in sim.business:
+            for person in bus.employees:
+                G.add_edge(bus.id, person.id)
+
+    nx.draw(G, ax=ax, pos=pos, node_color=colors, node_size=sizes)
+
+
 def save_gif(anim, file):
     anim.save(file, writer='imagemagick', fps=60)
 

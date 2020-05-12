@@ -6,6 +6,10 @@ from covid_abs.agents import Status, InfectionSeverity, Agent
 from covid_abs.common import *
 
 
+def distance(a, b):
+    return np.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)
+
+
 class Simulation(object):
     def __init__(self, **kwargs):
         self.population = []
@@ -245,7 +249,7 @@ class Simulation(object):
                 ai = self.population[i]
                 aj = self.population[j]
 
-                if np.sqrt((ai.x - aj.x) ** 2 + (ai.y - aj.y) ** 2) <= self.contagion_distance:
+                if distance(ai, aj) <= self.contagion_distance:
                     contacts.append((i, j))
 
         for par in contacts:
