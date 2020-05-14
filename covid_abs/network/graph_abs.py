@@ -2,238 +2,9 @@
 Graph induced
 """
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-from covid_abs.common import *
-from covid_abs.agents import *
 from covid_abs.abs import *
-
-
-def check_time(iteration, start, end):
-    return start <= iteration % 24 < end
-
-
-def new_day(iteration):
-    return iteration % 24 == 0
-
-
-def day_of_week(iteration):
-    return (iteration // 24) % 7 + 1
-
-
-def work_day(iteration):
-    wd = day_of_week(iteration)
-    return wd not in [1, 7]
-
-
-def day_of_month(iteration):
-    return (iteration // 24) % 30 + 1
-
-
-def new_month(iteration):
-    return day_of_month(iteration) == 1 and iteration % 24 == 0
-
-
-def bed_time(iteration):
-    return check_time(iteration,0,8)
-
-
-def work_time(iteration):
-    return check_time(iteration,8,16)
-
-
-def lunch_time(iteration):
-    return iteration % 24 == 12
-
-
-def free_time(iteration):
-    return check_time(iteration,17,24)
-
-
-class EconomicalStatus(Enum):
-    Active = 1
-    Inactive = 0
-
-
-class Business(Agent):
-    """
-    The container of Agent's attributes and status
-    """
-    def __init__(self, **kwargs):
-        super(Business, self).__init__(**kwargs)
-        self.employees = []
-        self.num_employees = 0
-        self.type = AgentType.Business
-        self.incomes = 0
-        self.expenses = kwargs.get('expenses')
-        self.labor_expenses = {}
-        self.price = kwargs.get("price", np.max([1.0, np.random.normal(5, 1)]))
-        self.stocks = 10
-        self.sales = 0
-        self.open = True
-
-    def cash(self, value):
-        self.wealth += value
-
-    def hire(self, agent):
-        self.employees.append(agent)
-        self.labor_expenses[agent.id] = 0.0
-        agent.employer = self
-        self.num_employees += 1
-
-    def fire(self, agent):
-        self.employees.remove(agent)
-        self.labor_expenses[agent.id] = None
-        agent.employer = None
-        self.num_employees -= 1
-
-    def demand(self, agent):
-        """Expenses due to employee payments"""
-        agent.supply(self.labor_expenses[agent.id])
-        self.cash(-self.labor_expenses[agent.id])
-        self.labor_expenses[agent.id] = 0
-
-    def supply(self, agent):
-        """Incomes due to selling product/service"""
-        qty = np.random.randint(1, 10)
-        if qty > self.stocks:
-            qty = self.stocks
-        value = self.price * agent.social_stratum * qty
-        agent.demand(value)
-        self.cash(value)
-        self.incomes += value
-        self.stocks -= qty
-        self.sales += qty
-
-    def checkin(self, agent):
-        """Employee is working"""
-        self.stocks += 1
-        self.labor_expenses[agent.id] += agent.income / 160
-
-    def taxes(self, government):
-        """Expenses due to employee payments"""
-        tax = government.price * self.num_employees + government.price * self.social_stratum
-        government.cash(tax)
-        self.cash(-tax)
-
-    def accounting(self, government):
-        for person in self.employees:
-            self.demand(person)
-        self.taxes(government)
-        self.incomes = 0
-        self.sales = 0
-
-
-class House(Agent):
-    """
-    The container of Agent's attributes and status
-    """
-
-    def __init__(self, **kwargs):
-        super(House, self).__init__(**kwargs)
-        self.homemates = []
-        self.type = AgentType.House
-        self.size = 0
-        self.incomes = 0
-        self.expenses = 0
-
-    def append_mate(self, agent):
-        self.homemates.append(agent)
-        self.wealth += agent.wealth
-        self.size += 1
-        agent.house = self
-        agent.x = int(self.x + np.random.normal(0.0, 0.5, 1))
-        agent.y = int(self.y + np.random.normal(0.0, 0.5, 1))
-
-    def checkin(self, agent):
-        self.demand(agent.expenses/720)
-
-    def demand(self, value = 0.0):
-        """Expense of consuming product/services"""
-        self.wealth -= value
-        self.expenses += value
-
-    def supply(self, value = 0.0):
-        """Income of work"""
-        self.wealth += value
-        self.incomes += value
-
-    def accounting(self, government):
-        """Expenses due to employee payments"""
-        tax = government.price * len(self.homemates) + government.price * self.social_stratum
-        government.cash(tax)
-        self.wealth -= tax
-        self.incomes = 0
-        self.expenses = 0
-
-
-class Person(Agent):
-    """
-    The container of Agent's attributes and status
-    """
-
-    def __init__(self, **kwargs):
-        super(Person, self).__init__(**kwargs)
-        self.employer = kwargs.get("employer", None)
-        self.house = kwargs.get("house", None)
-        self.type = AgentType.Person
-        self.economical_status = EconomicalStatus.Inactive
-        self.incomes = kwargs.get("income", 0.0)
-        self.expenses = kwargs.get("expense", 0.0)
-
-        if 18 <= self.age <= 65:
-            self.economical_status = EconomicalStatus.Active
-
-    def demand(self, value = 0.0):
-        """Expense for product/services"""
-        self.house.demand(value)
-
-    def supply(self, value = 0.0):
-        """Income for work"""
-        self.house.supply(value)
-
-    def move_to_work(self):
-        if self.infected_status != InfectionSeverity.Asymptomatic:
-            return
-
-        if self.economical_status == EconomicalStatus.Active:
-            if self.employer is not None and self.employer.open:
-                self.x = int(self.employer.x + np.random.normal(0.0, 0.25, 1))
-                self.y = int(self.employer.y + np.random.normal(0.0, 0.25, 1))
-                self.employer.checkin(self)
-            elif self.employer is None:
-                self.x = int(self.x + np.random.normal(0.0, 1, 1))
-                self.y = int(self.y + np.random.normal(0.0, 1, 1))
-
-    def move_to_home(self):
-        if self.infected_status != InfectionSeverity.Asymptomatic:
-            return
-
-        if self.house is not None:
-            self.house.checkin(self)
-            self.x = int(self.house.x + np.random.normal(0.0, 0.25, 1))
-            self.y = int(self.house.y + np.random.normal(0.0, 0.25, 1))
-        else:
-            self.wealth -= self.incomes / 720
-            self.x = int(self.x + np.random.normal(0.0, 1, 1))
-            self.y = int(self.y + np.random.normal(0.0, 1, 1))
-
-    def move_freely(self, range):
-        if self.infected_status != InfectionSeverity.Asymptomatic:
-            return
-
-        self.x = int(self.x + np.random.normal(0, range, 1))
-        self.y = int(self.y + np.random.normal(0, range, 1))
-
-    def move_to(self, agent):
-        self.x = int(agent.x + np.random.normal(0.0, 0.25, 1))
-        self.y = int(agent.y + np.random.normal(0.0, 0.25, 1))
+from covid_abs.network.agents import EconomicalStatus, Business, House, Person
+from covid_abs.network.util import new_day, work_day, new_month, bed_time, work_time, lunch_time, free_time
 
 
 class GraphSimulation(Simulation):
@@ -245,11 +16,21 @@ class GraphSimulation(Simulation):
         self.business = []
         self.houses = []
         self.healthcare = None
-        self.homeless_rate = kwargs.get("homeless_rate", 0.001)
+        self.homeless_rate = kwargs.get("homeless_rate", 0.01)
         self.unemployment_rate = kwargs.get("unemployment_rate", 0.1)
-        self.homemates_avg = kwargs.get("homemates_avg", 5)
+        self.homemates_avg = kwargs.get("homemates_avg", 3)
         self.homemates_std = kwargs.get("homemates_std", 1)
         self.iteration = -1
+        self.triggers_business = kwargs.get("triggers_business", [])
+        "A dictionary with conditional changes in the Business attributes"
+        self.triggers_government = kwargs.get("triggers_government", [])
+        "A dictionary with conditional changes in the Government attributes"
+
+    def append_trigger_business(self, condition, attribute, action):
+        self.triggers_business.append({'condition': condition, 'attribute': attribute, 'action': action})
+
+    def append_triggers_government(self, condition, attribute, action):
+        self.triggers_government.append({'condition': condition, 'attribute': attribute, 'action': action})
 
     def create_business(self, social_stratum=None):
         x, y = self.random_position()
@@ -343,26 +124,42 @@ class GraphSimulation(Simulation):
                     agent.income = basic_income[agent.social_stratum] * self.minimum_income
 
                     # distribute employ
-                    test = True
-                    while test:
-                        ix = np.random.randint(0, self.total_business)
-                        if self.business[ix].social_stratum in [quintile, quintile+1]:
-                            self.business[ix].hire(agent)
-                            test = False
-                        else:
-                            test = True
+
+                    unemployed_test = np.random.rand()
+
+                    if unemployed_test > self.unemployment_rate:
+                        test = True
+                        while test:
+                            ix = np.random.randint(0, self.total_business)
+                            if self.business[ix].social_stratum in [quintile, quintile+1]:
+                                self.business[ix].hire(agent)
+                                test = False
+                            else:
+                                test = True
 
                 agent.expenses = self.minimum_expense
 
                 #distribute habitation
 
-                ix = np.random.randint(0, nhouses)
-                house = houses[ix]
-                house.append_mate(agent)
+                homeless_test = np.random.rand()
 
+                if homeless_test > self.homeless_rate:
+                    test = True
+                    while test:
+                        ix = np.random.randint(0, nhouses)
+                        house = houses[ix]
+                        if house.social_stratum == agent.social_stratum and\
+                                house.size < self.homemates_avg + self.homemates_std:
+                            house.append_mate(agent)
+                            test = False
 
     def execute(self):
         self.iteration += 1
+
+        move_home_triggers = [k for k in self.triggers_population if k['attribute'] == 'move_home']
+        move_work_triggers = [k for k in self.triggers_population if k['attribute'] == 'move_work']
+        move_freely_triggers = [k for k in self.triggers_population if k['attribute'] == 'move_freely']
+        other_triggers = [k for k in self.triggers_population if not k['attribute'].startswith('move')]
 
         bed = bed_time(self.iteration)
         work = work_time(self.iteration)
@@ -375,14 +172,36 @@ class GraphSimulation(Simulation):
         if new_dy:
             print("Day {}".format(self.iteration // 24))
 
+        if len(self.triggers_government) > 0:
+            for trigger in self.triggers_government:
+                if trigger['condition'](self.government):
+                    attr = trigger['attribute']
+                    self.government.__dict__[attr] = trigger['action'](self.government)
+
+        if len(self.triggers_business) > 0:
+            for trigger in self.triggers_simulation:
+                for bus in self.business:
+                    if trigger['condition'](bus):
+                        attr = trigger['attribute']
+                        bus.__dict__[attr] = trigger['action'](bus)
+
         for agent in filter(lambda x: x.status != Status.Death, self.population):
             if bed:
-                agent.move_to_home()
+                agent.move_to_home(triggers=move_home_triggers)
+
             elif lunch or free or not work_dy:
-                agent.move_freely(self.amplitudes[agent.status])
+                agent.move_freely(self.amplitudes[agent.status], triggers=move_freely_triggers)
 
             elif work_dy and work:
-                agent.move_to_work()
+                agent.move_to_work(triggers=move_work_triggers)
+
+            agent.x = self._xclip(agent.x)
+            agent.y = self._yclip(agent.y)
+
+            for trigger in other_triggers:
+                if trigger['condition'](agent):
+                    attr = trigger['attribute']
+                    agent.__dict__[attr] = trigger['action'](agent.__dict__[attr])
 
             for bus in filter(lambda x: x != agent.employer, self.business):
                 if distance(agent, bus) <= self.amplitudes[agent.status]:
@@ -390,7 +209,6 @@ class GraphSimulation(Simulation):
 
             if new_dy:
                 self.update(agent)
-
 
         if self.iteration > 1 and new_mth:
             for bus in self.business:
@@ -415,6 +233,12 @@ class GraphSimulation(Simulation):
             aj = self.population[par[1]]
             self.contact(ai, aj)
             self.contact(aj, ai)
+
+        if len(self.triggers_simulation) > 0:
+            for trigger in self.triggers_simulation:
+                if trigger['condition'](self):
+                    attr = trigger['attribute']
+                    self.__dict__[attr] = trigger['action'](self.__dict__[attr])
 
         self.statistics = None
 
@@ -469,7 +293,19 @@ class GraphSimulation(Simulation):
                 self.statistics['BusinessSales'] = sum([b.sales for b in self.business])
                 self.statistics['HousesWealth'] = sum([b.wealth for b in self.houses])
                 self.statistics['HousesExpenses'] = sum([b.expenses for b in self.houses])
-            return self.statistics
 
-        return super(GraphSimulation, self).get_statistics(kind)
+        elif kind == 'ecom3':
+            if self.statistics is None:
+                self.statistics = {
+                    'AvgHousemates': np.average([h.size for h in self.houses]),
+                    'AvgEmployees': np.average([h.num_employees for h in self.business]),
+                    'NumUnemployed': np.sum([1 for h in self.population if h.employer is None
+                                             and h.economical_status == EconomicalStatus.Active]),
+                    'NumHomeless': np.sum([1 for h in self.population if h.house is None]),
+                    'NumInactive': np.sum([1 for h in self.population if h.economical_status == EconomicalStatus.Inactive])
+                }
+        else:
+            return super(GraphSimulation, self).get_statistics(kind)
+
+        return self.statistics
 

@@ -1,12 +1,6 @@
-import pandas as pd
-import matplotlib as plt
-
-from covid_abs.agents import *
-from covid_abs.abs import *
-from covid_abs.common import *
-from covid_abs.experiments import *
 from covid_abs.graphics import  *
-from covid_abs.network import *
+from covid_abs.network.graph_abs import *
+from covid_abs.network.util import *
 
 sim = GraphSimulation(  # Percentage of infected in initial population
     initial_infected_perc=0.01,
@@ -19,14 +13,15 @@ sim = GraphSimulation(  # Percentage of infected in initial population
     # Size of population
     population_size=100,
     # Minimal distance between agents for contagion
-    contagion_distance=1.5,
+    contagion_distance=.01,
+    contagion_rate=.3,
     # Maximum percentage of population which Healthcare System can handle simutaneously
     critical_limit=0.05,
     # Mobility ranges for agents, by Status
     amplitudes={
-        Status.Susceptible: 20,
-        Status.Recovered_Immune: 20,
-        Status.Infected: 20
+        Status.Susceptible: 5,
+        Status.Recovered_Immune: 5,
+        Status.Infected: 5
     },
     total_wealth=1000000,
     total_business=10,
@@ -34,14 +29,17 @@ sim = GraphSimulation(  # Percentage of infected in initial population
     minimum_expense=850.0
 )
 
-sim = execute_graphsimulation(sim, iterations=1000)
-plt.plot()
+#anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
 
-#sim.initialize()
+#anim.save("scenario1.mp4", writer='ffmpeg', fps=60)
 
-from time import sleep
+#save_gif(anim, teste.mp4)
 
-'''
+#plt.plot()
+
+sim.initialize()
+
+#'''
 #fig = plt.figure()
 #ax = fig.add_subplot(111)
 plt.show()
@@ -53,14 +51,14 @@ for i in range(1000):
     #break
     #plt.clf()
     #sleep(1)
-    if day_of_month(i) % 5 == 0 and i%24 == 0:
-        print("{}".format(sim.get_statistics()))
+    #if day_of_month(i) % 5 == 0 and i%24 == 0:
+    print("{}".format(sim.get_statistics('ecom3')))
     #ax.clear()
     #plt.set_title("{}".format(i))
     #
-    draw(sim) #, ax=ax)
+    draw_graph(sim) #, ax=ax)
     plt.show()
-'''
+#'''
 
 print("")
 

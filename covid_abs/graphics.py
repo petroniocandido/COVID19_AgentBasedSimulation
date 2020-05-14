@@ -38,16 +38,16 @@ def color1(s):
 def color2(agent):
     """Plotting colors by Status and InfectionSeverity"""
     if agent.status == Status.Susceptible:
-        return 'lightblue'
+        return 'blue'
     elif agent.status == Status.Infected:
         if agent.infected_status == InfectionSeverity.Asymptomatic:
-            return 'gray'
+            return 'darkgray'
         elif agent.infected_status == InfectionSeverity.Hospitalization:
             return 'orange'
         else:
             return 'red'
     elif agent.status == Status.Recovered_Immune:
-        return 'lightgreen'
+        return 'green'
     elif agent.status == Status.Death:
         return 'black'
 
@@ -244,6 +244,8 @@ def update_graph(sim, ax, linhas1, linhas2, statistics):
     """
     sim.execute()
 
+    ax.clear()
+
     draw_graph(sim, ax=ax)
 
     df1, df2 = update_statistics(sim, statistics)
@@ -264,7 +266,8 @@ def update_graph(sim, ax, linhas1, linhas2, statistics):
 
 
 def execute_graphsimulation(sim, **kwargs):
-    import networkx as nx
+    from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
+                                   AutoMinorLocator)
 
     statistics = {'info': [], 'ecom': []}
 
@@ -273,6 +276,8 @@ def execute_graphsimulation(sim, **kwargs):
 
     frames = kwargs.get('iterations', 100)
     iteration_time = kwargs.get('iteration_time', 250)
+
+    tick_unit = kwargs.get('tick_unit', 72)
 
     sim.initialize()
 
@@ -284,8 +289,14 @@ def execute_graphsimulation(sim, **kwargs):
 
     df1, df2 = update_statistics(sim, statistics)
 
+    tickslabels = [str(i//24) for i in range(0, frames, tick_unit)]
+
+    #print(ticks)
+
     ax[1].set_title('Contagion Evolution')
     ax[1].set_xlim((0, frames))
+    ax[1].xaxis.set_major_locator(MultipleLocator(tick_unit))
+    ax[1].set_xticklabels(tickslabels)
 
     linhas1 = {}
 
@@ -304,7 +315,8 @@ def execute_graphsimulation(sim, **kwargs):
     linhas2 = {}
 
     ax[2].set_title('Economical Impact')
-    ax[2].set_xlim((0, frames))
+    ax[2].xaxis.set_major_locator(MultipleLocator(tick_unit))
+    ax[2].set_xticklabels(tickslabels)
 
     print(df2.columns.values)
     for col in df2.columns.values:
@@ -336,21 +348,21 @@ def draw_graph(sim, ax=None, edges=False):
     sizes = []
 
     G.add_node(sim.healthcare.id, type='healthcare')
-    colors.append('pink')
+    colors.append('darkseagreen')
     pos[sim.healthcare.id] = [sim.healthcare.x, sim.healthcare.y]
-    sizes.append(30)
+    sizes.append(50)
 
     for house in sim.houses:
         G.add_node(house.id, type='house')
-        colors.append('darkblue')
+        colors.append('cyan')
         pos[house.id] = [house.x, house.y]
-        sizes.append(30)
+        sizes.append(50)
 
     for bus in sim.business:
         G.add_node(bus.id, type='business')
-        colors.append('darkred')
+        colors.append('darkviolet')
         pos[bus.id] = [bus.x, bus.y]
-        sizes.append(30)
+        sizes.append(50)
 
     for person in sim.population:
         G.add_node(person.id, type='person')
@@ -368,9 +380,60 @@ def draw_graph(sim, ax=None, edges=False):
                 G.add_edge(bus.id, person.id)
 
     nx.draw(G, ax=ax, pos=pos, node_color=colors, node_size=sizes)
+    if ax is not None:
+        ax.set_xlim((0, sim.length))
+        ax.set_ylim((0, sim.height))
 
 
-def save_gif(anim, file):
+def draw_graph2(sim, ax=None, edges=False):
+    import networkx as nx
+    from covid_abs.graphics import color2
+    G = nx.Graph()
+    pos = {}
+
+    G.add_node(sim.healthcare.id, type='healthcare')
+    pos[sim.healthcare.id] = [sim.healthcare.x, sim.healthcare.y]
+
+    houses = []
+    for house in sim.houses:
+        G.add_node(house.id, type='house')
+        pos[house.id] = [house.x, house.y]
+        houses.append(house.id)
+
+    buss = []
+    for bus in sim.business:
+        G.add_node(bus.id, type='business')
+        pos[bus.id] = [bus.x, bus.y]
+        buss.append(bus.id)
+
+    colors = {}
+    for person in sim.population:
+        G.add_node(person.id, type='person')
+        col = color2(person)
+        if col not in colors:
+            colors[col] = {'status': person.status, 'severity': person.infected_status, 'id':[]}
+        colors[col]['id'].append(person.id)
+        pos[person.id] = [person.x, person.y]
+
+    if edges:
+        for house in sim.houses:
+            for person in house.homemates:
+                G.add_edge(house.id, person.id)
+
+        for bus in sim.business:
+            for person in bus.employees:
+                G.add_edge(bus.id, person.id)
+
+    #nx.draw(G, ax=ax, pos=pos, node_color=colors, node_size=sizes)
+    nx.draw_networkx_nodes(G, pos=pos, nodelist=[sim.healthcare.id], node_color='darkseagreen', label='Hospital')
+    nx.draw_networkx_nodes(G, pos=pos, nodelist=houses, node_color='cyan', label='Houses')
+    nx.draw_networkx_nodes(G, pos=pos, nodelist=buss, node_color='darkviolet', label='Business')
+    for key in colors.keys():
+        nx.draw_networkx_nodes(G, pos=pos, nodelist=[sim.healthcare.id], node_color='darkseagreen', label='Hospital')
+
+
+
+def save_gif(anim, file, writer='imagemagick'):
     anim.save(file, writer='imagemagick', fps=60)
 
 

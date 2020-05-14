@@ -48,6 +48,12 @@ class Simulation(object):
 
         self.total_wealth = kwargs.get("total_wealth", 10 ** 4)
 
+    def _xclip(self, x):
+        return np.clip(int(x), 0, self.length)
+
+    def _yclip(self, y):
+        return np.clip(int(y), 0, self.height)
+
     def get_population(self):
         """
         Return the population in the current iteration
@@ -89,10 +95,8 @@ class Simulation(object):
         self.triggers_population.append({'condition': condition, 'attribute': attribute, 'action': action})
 
     def random_position(self):
-        x = np.clip(int(self.length / 2 + (np.random.randn(1) * (self.length / 3))),
-                    0, self.length)
-        y = np.clip(int(self.height / 2 + (np.random.randn(1) * (self.height / 3))),
-                    0, self.height)
+        x = self._xclip(self.length / 2 + (np.random.randn(1) * (self.length / 3)))
+        y = self._yclip(self.height / 2 + (np.random.randn(1) * (self.height / 3)))
 
         return x, y
 
@@ -143,8 +147,8 @@ class Simulation(object):
         """
 
         if agent1.status == Status.Susceptible and agent2.status == Status.Infected:
-            teste_contagio = np.random.random()
-            if teste_contagio <= self.contagion_rate:
+            contagion_test = np.random.random()
+            if contagion_test <= self.contagion_rate:
                 agent1.status = Status.Infected
 
     def move(self, agent, triggers=[]):
