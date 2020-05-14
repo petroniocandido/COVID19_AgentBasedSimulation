@@ -20,6 +20,7 @@ class InfectionSeverity(Enum):
     """
     The Severity of the Infected agents
     """
+    Exposed = 'e'
     Asymptomatic = 'a'
     Hospitalization = 'h'
     Severe = 'g'
@@ -32,6 +33,8 @@ class AgentType(Enum):
     Person = 'p'
     Business = 'b'
     House = 'h'
+    Government = 'g'
+    Healthcare = 'c'
 
 
 class Agent(object):

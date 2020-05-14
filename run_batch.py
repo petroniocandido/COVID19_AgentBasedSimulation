@@ -13,33 +13,48 @@ sim = GraphSimulation(  # Percentage of infected in initial population
     # Size of population
     population_size=100,
     # Minimal distance between agents for contagion
-    contagion_distance=.01,
+    contagion_distance=.1,
     contagion_rate=.3,
     # Maximum percentage of population which Healthcare System can handle simutaneously
     critical_limit=0.05,
     # Mobility ranges for agents, by Status
     amplitudes={
-        Status.Susceptible: 5,
-        Status.Recovered_Immune: 5,
-        Status.Infected: 5
+        Status.Susceptible: 10,
+        Status.Recovered_Immune: 10,
+        Status.Infected: 10
     },
-    total_wealth=1000000,
+    total_wealth=10000000,
     total_business=10,
     minimum_income=900.0,
-    minimum_expense=850.0
+    minimum_expense=650.0
 )
 
-#anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
+#sim.apply_business('open', True, 'open', False)
 
-#anim.save("scenario1.mp4", writer='ffmpeg', fps=60)
+
+def mov_check(a, b):
+    if b is not None:
+        b.checkin(a)
+    return a.x, a.y
+
+#'''
+sim.append_trigger_population(lambda x: True, 'move_freely', lambda a: (a.x, a.y) )
+sim.append_trigger_population(lambda x: not x.is_unemployed(), 'move_work', lambda a: (a.x, a.y) )
+sim.append_trigger_population(lambda x: True, 'move_home', lambda a: mov_check(a, a.house) )
+#'''
+
+anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
+#anim = execute_graphsimulation(sim, iterations=240, iteration_time=25)
+
+anim.save("scenario2.mp4", writer='ffmpeg', fps=60)
 
 #save_gif(anim, teste.mp4)
 
 #plt.plot()
 
-sim.initialize()
+#sim.initialize()
 
-#'''
+'''
 #fig = plt.figure()
 #ax = fig.add_subplot(111)
 plt.show()
@@ -52,13 +67,14 @@ for i in range(1000):
     #plt.clf()
     #sleep(1)
     #if day_of_month(i) % 5 == 0 and i%24 == 0:
+    print("{}".format(sim.get_statistics('ecom')))
     print("{}".format(sim.get_statistics('ecom3')))
     #ax.clear()
     #plt.set_title("{}".format(i))
     #
     draw_graph(sim) #, ax=ax)
     plt.show()
-#'''
+'''
 
 print("")
 

@@ -148,8 +148,10 @@ class Simulation(object):
 
         if agent1.status == Status.Susceptible and agent2.status == Status.Infected:
             contagion_test = np.random.random()
+            agent1.infection_status = InfectionSeverity.Exposed
             if contagion_test <= self.contagion_rate:
                 agent1.status = Status.Infected
+                agent1.infection_status = InfectionSeverity.Asymptomatic
 
     def move(self, agent, triggers=[]):
         """
@@ -299,14 +301,14 @@ class Simulation(object):
                 self.statistics[status.name] = np.sum(
                     [1 for a in self.population if a.status == status]) / self.population_size
 
-            for infected_status in InfectionSeverity:
+            for infected_status in filter(lambda x: x != InfectionSeverity.Exposed, InfectionSeverity):
                 self.statistics[infected_status.name] = np.sum([1 for a in self.population if
                                                                 a.infected_status == infected_status and
                                                                 a.status != Status.Death]) / self.population_size
 
-            for quintil in [0, 1, 2, 3, 4]:
-                self.statistics['Q{}'.format(quintil + 1)] = np.sum(
-                    [a.wealth for a in self.population if a.social_stratum == quintil
+            for quintile in [0, 1, 2, 3, 4]:
+                self.statistics['Q{}'.format(quintile + 1)] = np.sum(
+                    [a.wealth for a in self.population if a.social_stratum == quintile
                      and a.age >= 18 and a.status != Status.Death])
 
         return self.filter_stats(kind)

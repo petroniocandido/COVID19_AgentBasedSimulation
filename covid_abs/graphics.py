@@ -13,7 +13,10 @@ from covid_abs.abs import *
 from matplotlib import animation, rc
 from IPython.display import HTML
 
-legend_ecom = {'Q1': 'Most Poor', 'Q2': 'Poor', 'Q3': 'Working Class', 'Q4': 'Rich', 'Q5': 'Most Rich'}
+legend_ecom = {
+    'Q1': 'Most Poor', 'Q2': 'Poor', 'Q3': 'Working Class',
+    'Q4': 'Rich', 'Q5': 'Most Rich', 'Business':'Business', 'Government':'Government'
+}
 """Legend for wealth distribution quintiles"""
 
 
@@ -61,9 +64,13 @@ def color3(a):
     elif a == 'Q3':
         return 'yellow'
     elif a == 'Q4':
-        return 'green'
-    elif a == 'Q5':
         return 'blue'
+    elif a == 'Q5':
+        return 'purple'
+    elif a == 'Business':
+        return 'green'
+    elif a == 'Government':
+        return 'darkgreen'
 
 
 def update_statistics(sim, statistics):
@@ -315,10 +322,11 @@ def execute_graphsimulation(sim, **kwargs):
     linhas2 = {}
 
     ax[2].set_title('Economical Impact')
+    ax[2].set_xlim((0, frames))
     ax[2].xaxis.set_major_locator(MultipleLocator(tick_unit))
     ax[2].set_xticklabels(tickslabels)
 
-    print(df2.columns.values)
+    #print(df2.columns.values)
     for col in df2.columns.values:
         linhas2[col], = ax[2].plot(df2.index.values, df2[col].values, c=color3(col), label=legend_ecom[col])
 
@@ -350,19 +358,19 @@ def draw_graph(sim, ax=None, edges=False):
     G.add_node(sim.healthcare.id, type='healthcare')
     colors.append('darkseagreen')
     pos[sim.healthcare.id] = [sim.healthcare.x, sim.healthcare.y]
-    sizes.append(50)
+    sizes.append(100)
 
     for house in sim.houses:
         G.add_node(house.id, type='house')
         colors.append('cyan')
         pos[house.id] = [house.x, house.y]
-        sizes.append(50)
+        sizes.append(100)
 
     for bus in sim.business:
         G.add_node(bus.id, type='business')
         colors.append('darkviolet')
         pos[bus.id] = [bus.x, bus.y]
-        sizes.append(50)
+        sizes.append(100)
 
     for person in sim.population:
         G.add_node(person.id, type='person')
