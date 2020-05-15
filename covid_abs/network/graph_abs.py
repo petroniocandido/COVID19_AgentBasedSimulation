@@ -22,6 +22,11 @@ class GraphSimulation(Simulation):
         self.homemates_avg = kwargs.get("homemates_avg", 3)
         self.homemates_std = kwargs.get("homemates_std", 1)
         self.iteration = -1
+        self.population_move_triggers = []
+        self.population_move_home_triggers = []
+        self.population_move_work_triggers = []
+        self.population_move_freely_triggers = []
+        self.population_other_triggers = []
 
     def apply_business(self, filter_attribute, filter_value, target_attribute, target_value):
         for bus in self.business:
@@ -31,6 +36,28 @@ class GraphSimulation(Simulation):
     def apply_government(self, filter_attribute, filter_value, target_attribute, target_value):
         if self.government.__dict__[filter_attribute] == filter_value:
             self.government.__dict__[target_attribute] == target_value
+
+    def append_trigger_population(self, condition, attribute, action):
+        """
+        Append a conditional change in the population attributes
+
+        :param condition: a lambda function that receives the current agent instance and returns a boolean
+        :param attribute: string, the attribute name of the agent which will be changed
+        :param action: a lambda function that receives the current agent instance and returns the new
+        value of the attribute
+        """
+        self.triggers_population.append({'condition': condition, 'attribute': attribute, 'action': action})
+
+        if attribute == 'move':
+            self.population_move_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
+        elif attribute == 'move_home':
+            self.population_move_home_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
+        elif attribute == 'move_work':
+            self.population_move_work_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
+        elif attribute == 'move_freely':
+            self.population_move_freely_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
+        else:
+            self.population_other_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
 
     def get_unemployed(self):
         return [p for p in self.population if p.is_unemployed()]
@@ -163,13 +190,19 @@ class GraphSimulation(Simulation):
                             house.append_mate(agent)
                             test = False
 
+    def pull_agent_trigger(self, agent, triggers):
+        for trigger in triggers:
+            if trigger['condition'](agent, self):
+                if trigger['attribute'].startswith('move'):
+                    agent.x, agent.y = trigger['action'](agent, self)
+                else:
+                    attr = trigger['attribute']
+                    agent.__dict__[attr] = trigger['action'](agent.__dict__[attr])
+                return True
+        return False
+
     def execute(self):
         self.iteration += 1
-
-        move_home_triggers = [k for k in self.triggers_population if k['attribute'] == 'move_home']
-        move_work_triggers = [k for k in self.triggers_population if k['attribute'] == 'move_work']
-        move_freely_triggers = [k for k in self.triggers_population if k['attribute'] == 'move_freely']
-        other_triggers = [k for k in self.triggers_population if not k['attribute'].startswith('move')]
 
         bed = bed_time(self.iteration)
         work = work_time(self.iteration)
@@ -184,25 +217,25 @@ class GraphSimulation(Simulation):
 
         for agent in filter(lambda x: x.status != Status.Death, self.population):
             amplitude = self.amplitudes[agent.status]
-            if bed:
-                agent.move_to_home(amplitude, triggers=move_home_triggers)
 
-            elif lunch or free or not work_dy:
-                agent.move_freely(amplitude, triggers=move_freely_triggers)
+            if not self.pull_agent_trigger(agent, self.population_move_triggers):
+                if bed and not self.pull_agent_trigger(agent, self.population_move_home_triggers):
+                    agent.move_to_home(amplitude)
 
-            elif work_dy and work:
-                agent.move_to_work(amplitude, triggers=move_work_triggers)
+                elif (lunch or free or not work_dy) and \
+                        not self.pull_agent_trigger(agent, self.population_move_freely_triggers):
+                    agent.move_freely(amplitude)
+
+                elif (work_dy and work) and not self.pull_agent_trigger(agent, self.population_move_work_triggers):
+                    agent.move_to_work(amplitude)
 
             agent.x = self._xclip(agent.x)
             agent.y = self._yclip(agent.y)
 
-            for trigger in other_triggers:
-                if trigger['condition'](agent):
-                    attr = trigger['attribute']
-                    agent.__dict__[attr] = trigger['action'](agent.__dict__[attr])
+            self.pull_agent_trigger(agent, self.population_other_triggers)
 
             for bus in filter(lambda x: x != agent.employer, self.business):
-                if distance(agent, bus) <= self.amplitudes[agent.status]:
+                if distance(agent, bus) <= 10:
                     bus.supply(agent)
 
             if new_dy:

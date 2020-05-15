@@ -200,14 +200,9 @@ class Person(Agent):
         else:
             self.wealth += value
 
-    def move_to_work(self, amplitude, triggers=[]):
+    def move_to_work(self, amplitude):
         if self.infected_status != InfectionSeverity.Asymptomatic:
             return
-
-        for trigger in triggers:
-            if trigger['condition'](self):
-                self.x, self.y = trigger['action'](self)
-                return
 
         if self.economical_status == EconomicalStatus.Active:
             if self.employer is not None and self.employer.open:
@@ -217,14 +212,9 @@ class Person(Agent):
             elif self.employer is None:
                 self.move_freely(amplitude)
 
-    def move_to_home(self, amplitude, triggers=[]):
+    def move_to_home(self, amplitude):
         if self.infected_status != InfectionSeverity.Asymptomatic:
             return
-
-        for trigger in triggers:
-            if trigger['condition'](self):
-                self.x, self.y = trigger['action'](self)
-                return
 
         if self.house is not None:
             self.house.checkin(self)
@@ -234,25 +224,15 @@ class Person(Agent):
             self.wealth -= self.incomes / 720
             self.move_freely(amplitude)
 
-    def move_freely(self, amplitude, triggers=[]):
+    def move_freely(self, amplitude):
         if self.infected_status != InfectionSeverity.Asymptomatic:
             return
-
-        for trigger in triggers:
-            if trigger['condition'](self):
-                self.x, self.y = trigger['action'](self)
-                return
 
         x,y = np.random.normal(0, amplitude, 2)
         self.x = int(self.x + x)
         self.y = int(self.y + y)
 
-    def move_to(self, agent, triggers=[]):
-
-        for trigger in triggers:
-            if trigger['condition'](self):
-                self.x, self.y = trigger['action'](agent)
-                return
+    def move_to(self, agent):
 
         self.x = int(agent.x + np.random.normal(0.0, 0.25, 1))
         self.y = int(agent.y + np.random.normal(0.0, 0.25, 1))

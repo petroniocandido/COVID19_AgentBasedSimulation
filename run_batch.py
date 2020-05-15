@@ -2,6 +2,9 @@ from covid_abs.graphics import  *
 from covid_abs.network.graph_abs import *
 from covid_abs.network.util import *
 
+
+
+#'''
 sim = GraphSimulation(  # Percentage of infected in initial population
     initial_infected_perc=0.01,
     # Percentage of immune in initial population
@@ -28,7 +31,7 @@ sim = GraphSimulation(  # Percentage of infected in initial population
     minimum_income=900.0,
     minimum_expense=650.0
 )
-
+#'''
 #sim.apply_business('open', True, 'open', False)
 
 
@@ -37,27 +40,27 @@ def mov_check(a, b):
         b.checkin(a)
     return a.x, a.y
 
-#'''
+'''
 sim.append_trigger_population(lambda x: True, 'move_freely', lambda a: (a.x, a.y) )
 sim.append_trigger_population(lambda x: not x.is_unemployed(), 'move_work', lambda a: (a.x, a.y) )
 sim.append_trigger_population(lambda x: True, 'move_home', lambda a: mov_check(a, a.house) )
-#'''
+'''
 
-anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
+#anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
 #anim = execute_graphsimulation(sim, iterations=240, iteration_time=25)
 
-anim.save("scenario2.mp4", writer='ffmpeg', fps=60)
+#anim.save("scenario2.mp4", writer='ffmpeg', fps=60)
 
 #save_gif(anim, teste.mp4)
 
 #plt.plot()
 
-#sim.initialize()
 
-'''
+#'''
 #fig = plt.figure()
 #ax = fig.add_subplot(111)
-plt.show()
+#plt.show()
+sim.initialize()
 for i in range(1000):
     #print(i%24, day_of_week(i), day_of_month(i), work_day(i))
     sim.execute()
@@ -74,7 +77,9 @@ for i in range(1000):
     #
     draw_graph(sim) #, ax=ax)
     plt.show()
-'''
+#'''
+
+
 
 print("")
 
