@@ -179,8 +179,8 @@ class GraphSimulation(Simulation):
         work_dy = work_day(self.iteration)
         new_mth = new_month(self.iteration)
 
-        if new_dy:
-            print("Day {}".format(self.iteration // 24))
+        #if new_dy:
+        #    print("Day {}".format(self.iteration // 24))
 
         for agent in filter(lambda x: x.status != Status.Death, self.population):
             amplitude = self.amplitudes[agent.status]
