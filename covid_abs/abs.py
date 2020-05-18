@@ -133,7 +133,7 @@ class Simulation(object):
         # Share the common wealth of 10^4 among the population, according each agent social stratum
         for quintile in [0, 1, 2, 3, 4]:
             total = lorenz_curve[quintile] * self.total_wealth
-            qty = max(1.0, np.sum([1 for a in self.population if a.social_stratum == quintil and a.age >= 18]))
+            qty = max(1.0, np.sum([1 for a in self.population if a.social_stratum == quintile and a.age >= 18]))
             ag_share = total / qty
             for agent in filter(lambda x: x.social_stratum == quintile and x.age >= 18, self.population):
                 agent.wealth = ag_share
