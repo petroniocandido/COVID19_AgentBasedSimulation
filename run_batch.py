@@ -4,7 +4,7 @@ from covid_abs.network.util import *
 
 
 
-#'''
+'''
 sim = GraphSimulation(  # Percentage of infected in initial population
     initial_infected_perc=0.01,
     # Percentage of immune in initial population
@@ -31,7 +31,7 @@ sim = GraphSimulation(  # Percentage of infected in initial population
     minimum_income=900.0,
     minimum_expense=650.0
 )
-#'''
+'''
 #sim.apply_business('open', True, 'open', False)
 
 
@@ -56,7 +56,7 @@ sim.append_trigger_population(lambda x: True, 'move_home', lambda a: mov_check(a
 #plt.plot()
 
 
-#'''
+'''
 #fig = plt.figure()
 #ax = fig.add_subplot(111)
 #plt.show()
@@ -77,9 +77,38 @@ for i in range(1440):
     #
     #draw_graph(sim) #, ax=ax)
     #plt.show()
-#'''
+'''
 
+from covid_abs.experiments import batch_experiment
 
+batch_experiment(50, 80, "scenario0.csv",
+                 simulation_type=GraphSimulation,
+                 # Percentage of infected in initial population
+    initial_infected_perc=0.0,
+    # Percentage of immune in initial population
+    initial_immune_perc=1.0,
+    # Length of simulation environment
+    length=500,
+    # Height of simulation environment
+    height=500,
+    # Size of population
+    population_size=100,
+    # Minimal distance between agents for contagion
+    contagion_distance=.1,
+    contagion_rate=.9,
+    # Maximum percentage of population which Healthcare System can handle simutaneously
+    critical_limit=0.05,
+    # Mobility ranges for agents, by Status
+    amplitudes={
+        Status.Susceptible: 10,
+        Status.Recovered_Immune: 10,
+        Status.Infected: 10
+    },
+    total_wealth=10000000,
+    total_business=10,
+    minimum_income=900.0,
+    minimum_expense=650.0
+  )
 
 print("")
 
