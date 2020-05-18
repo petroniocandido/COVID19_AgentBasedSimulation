@@ -8,7 +8,7 @@ from covid_abs.network.util import *
 sim = GraphSimulation(  # Percentage of infected in initial population
     initial_infected_perc=0.01,
     # Percentage of immune in initial population
-    initial_immune_perc=0.01,
+    initial_immune_perc=.0,
     # Length of simulation environment
     length=500,
     # Height of simulation environment
@@ -61,7 +61,7 @@ sim.append_trigger_population(lambda x: True, 'move_home', lambda a: mov_check(a
 #ax = fig.add_subplot(111)
 #plt.show()
 sim.initialize()
-for i in range(1000):
+for i in range(1440):
     #print(i%24, day_of_week(i), day_of_month(i), work_day(i))
     sim.execute()
     #for bus in sim.business:
@@ -69,14 +69,14 @@ for i in range(1000):
     #break
     #plt.clf()
     #sleep(1)
-    #if day_of_month(i) % 5 == 0 and i%24 == 0:
-    print("{}".format(sim.get_statistics('ecom')))
-    print("{}".format(sim.get_statistics('ecom3')))
+    if i%24 == 0:
+        print("{}".format(sim.get_statistics('ecom')))
+    #print("{}".format(sim.get_statistics('ecom')))
     #ax.clear()
     #plt.set_title("{}".format(i))
     #
-    draw_graph(sim) #, ax=ax)
-    plt.show()
+    #draw_graph(sim) #, ax=ax)
+    #plt.show()
 #'''
 
 

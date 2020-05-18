@@ -68,9 +68,9 @@ def color3(a):
     elif a == 'Q5':
         return 'purple'
     elif a == 'Business':
-        return 'green'
-    elif a == 'Government':
         return 'darkgreen'
+    elif a == 'Government':
+        return 'siena'
 
 
 def update_statistics(sim, statistics):

@@ -23,12 +23,12 @@ class Business(Agent):
         self.incomes = 0.0
         self.expenses = 0.0
         self.labor_expenses = {}
-        self.price = kwargs.get("price", np.max([1.0, np.random.normal(5, 1)]))
         self.stocks = 10
         self.sales = 0
         self.open = True
         self.type = kwargs.get("type", AgentType.Business)
         self.fixed_expenses = kwargs.get('fixed_expenses', 0.0)
+        self.price = kwargs.get("price", np.max([1.0, (self.social_stratum+1) * 10 + np.random.randn()]))
 
     def cash(self, value):
         self.wealth += value
@@ -50,23 +50,27 @@ class Business(Agent):
         if agent in self.employees:
             labor = self.labor_expenses[agent.id]
             agent.supply(labor)
-            self.cash(-labor)
             self.labor_expenses[agent.id] = 0
         elif agent.type == AgentType.Healthcare:
             labor = agent.expenses
             agent.cash(labor)
-            self.cash(-labor)
+        else:
+            labor = agent.expenses
+            agent.supply(labor)
+
+        self.cash(-labor)
+
         return labor
 
     def supply(self, agent):
         """Incomes due to selling product/service"""
         qty = np.random.randint(1, 10)
-        #if qty > self.stocks:
-        #    qty = self.stocks
+        if qty > self.stocks:
+            qty = self.stocks
         value = self.price * agent.social_stratum * qty
         if agent.type == AgentType.Person:
             agent.demand(value)
-        elif agent.type != AgentType.Person:
+        else:
             agent.cash(-value)
         self.cash(value)
         self.incomes += value
@@ -104,13 +108,28 @@ class Business(Agent):
                 self.fire(self.employees[ix])
         elif self.type == AgentType.Healthcare:
             sim.government.demand(self)
+        elif self.type == AgentType.Government:
+            self.demand(sim.healthcare)
+            for person in sim.get_homeless():
+                self.demand(person)
+            for person in sim.get_unemployed():
+                self.demand(person)
 
         self.incomes = 0
         self.sales = 0
 
     def update(self, simulation):
-        self.cash(-self.fixed_expenses)
-        if self.type == AgentType.Government:
+        if self.type != AgentType.Government:
+            self.cash(-self.fixed_expenses)
+            simulation.government.cash(self.fixed_expenses/3)
+            test = True
+            while test:
+                ix = np.random.randint(0, simulation.total_business)
+                bus = simulation.business[ix]
+                if bus.id != self.id:
+                    bus.cash(self.fixed_expenses/2)
+                    test = False
+        else:
             ix = np.random.randint(0, simulation.total_business)
             simulation.business[ix].supply(self)
 
@@ -135,8 +154,9 @@ class House(Agent):
         self.wealth += agent.wealth
         self.size += 1
         agent.house = self
-        agent.x = int(self.x + np.random.normal(0.0, 0.5, 1))
-        agent.y = int(self.y + np.random.normal(0.0, 0.5, 1))
+        x, y = np.random.normal(0.0, 0.25, 2)
+        agent.x = int(self.x + x)
+        agent.y = int(self.y + y)
 
     def checkin(self, agent):
         self.demand(agent.expenses/720)
@@ -160,7 +180,11 @@ class House(Agent):
         self.expenses = 0
 
     def update(self, simulation):
-        self.demand(self.fixed_expenses)
+        #self.demand(self.fixed_expenses)
+        simulation.government.cash(self.fixed_expenses/5)
+        for i in np.arange(0, 5):
+            ix = np.random.randint(0, simulation.total_business)
+            simulation.business[ix].cash(self.fixed_expenses/5)
 
 
 class Person(Agent):
@@ -206,8 +230,9 @@ class Person(Agent):
 
         if self.economical_status == EconomicalStatus.Active:
             if self.employer is not None and self.employer.open:
-                self.x = int(self.employer.x + np.random.normal(0.0, 0.25, 1))
-                self.y = int(self.employer.y + np.random.normal(0.0, 0.25, 1))
+                x, y = np.random.normal(0.0, 0.25, 2)
+                self.x = int(self.employer.x + x)
+                self.y = int(self.employer.y + y)
                 self.employer.checkin(self)
             elif self.employer is None:
                 self.move_freely(amplitude)
@@ -218,8 +243,9 @@ class Person(Agent):
 
         if self.house is not None:
             self.house.checkin(self)
-            self.x = int(self.house.x + np.random.normal(0.0, 0.25, 1))
-            self.y = int(self.house.y + np.random.normal(0.0, 0.25, 1))
+            x, y = np.random.normal(0.0, 0.25, 2)
+            self.x = int(self.house.x + x)
+            self.y = int(self.house.y + y)
         else:
             self.wealth -= self.incomes / 720
             self.move_freely(amplitude)
@@ -233,9 +259,9 @@ class Person(Agent):
         self.y = int(self.y + y)
 
     def move_to(self, agent):
-
-        self.x = int(agent.x + np.random.normal(0.0, 0.25, 1))
-        self.y = int(agent.y + np.random.normal(0.0, 0.25, 1))
+        x, y = np.random.normal(0.0, 0.25, 2)
+        self.x = int(agent.x + x)
+        self.y = int(agent.y + y)
 
         agent.checkin(self)
 

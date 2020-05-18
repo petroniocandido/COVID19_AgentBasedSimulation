@@ -12,7 +12,8 @@ class GraphSimulation(Simulation):
     def __init__(self, **kwargs):
         super(GraphSimulation, self).__init__(**kwargs)
         self.total_population = kwargs.get('total_population', 0)
-        self.total_business  = kwargs.get('total_business', 10)
+        self.total_business = kwargs.get('total_business', 10)
+        self.business_distance = kwargs.get('business_distance', 10)
         self.government = None
         self.business = []
         self.houses = []
@@ -102,7 +103,7 @@ class GraphSimulation(Simulation):
         self.healthcare.fixed_expenses += self.minimum_expense * 3
         x, y = self.random_position()
         self.government = Business(x=x, y=y, status=Status.Susceptible, type=AgentType.Government,
-                                   social_stratum=4)
+                                   social_stratum=4, price=1.0)
         self.government.fixed_expenses += self.population_size * (self.minimum_expense*0.05)
 
         #number of houses
@@ -174,7 +175,7 @@ class GraphSimulation(Simulation):
                             else:
                                 test = True
 
-                agent.expenses = basic_income[agent.social_stratum] * self.minimum_expense
+                agent.expenses = (agent.social_stratum + 1 ) * self.minimum_expense
 
                 #distribute habitation
 
@@ -235,7 +236,7 @@ class GraphSimulation(Simulation):
             self.pull_agent_trigger(agent, self.population_other_triggers)
 
             for bus in filter(lambda x: x != agent.employer, self.business):
-                if distance(agent, bus) <= 10:
+                if distance(agent, bus) <= self.business_distance:
                     bus.supply(agent)
 
             if new_dy:
@@ -260,11 +261,7 @@ class GraphSimulation(Simulation):
             self.healthcare.update(self)
 
         if self.iteration > 1 and new_mth:
-            self.government.demand(self.healthcare)
-            #for person in self.get_homeless():
-            #    self.government.demand(person)
-            #for person in self.get_unemployed():
-            #    self.government.demand(person)
+            self.government.accounting(self)
 
         contacts = []
 
@@ -278,9 +275,9 @@ class GraphSimulation(Simulation):
                 if distance(ai, aj) <= self.contagion_distance:
                     contacts.append((i, j))
 
-        for par in contacts:
-            ai = self.population[par[0]]
-            aj = self.population[par[1]]
+        for pair in contacts:
+            ai = self.population[pair[0]]
+            aj = self.population[pair[1]]
             self.contact(ai, aj)
             self.contact(aj, ai)
 
@@ -299,7 +296,7 @@ class GraphSimulation(Simulation):
                 self.statistics['Q{}'.format(quintile + 1)] = np.sum(
                     [a.wealth for a in self.houses if a.social_stratum == quintile]) + \
                     np.sum([a.wealth for a in self.population if a.is_homeless()])
-            self.statistics['Business'] = sum([b.wealth for b in self.business])
+            self.statistics['Business'] = np.sum([b.wealth for b in self.business])
             self.statistics['Government'] = self.government.wealth
         elif kind == 'ecom2':
             self.statistics = {
