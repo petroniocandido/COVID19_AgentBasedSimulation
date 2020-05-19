@@ -81,13 +81,13 @@ for i in range(1440):
 
 from covid_abs.experiments import batch_experiment
 
-batch_experiment(50, 1440, "scenario1.csv",
+batch_experiment(50, 1440, "scenario11.csv",
                  simulation_type=GraphSimulation,
                  verbose='experiments',
                  # Percentage of infected in initial population
-    initial_infected_perc=0.0,
+    initial_infected_perc=.01,
     # Percentage of immune in initial population
-    initial_immune_perc=1.0,
+    initial_immune_perc=.01,
     # Length of simulation environment
     length=500,
     # Height of simulation environment
@@ -95,7 +95,7 @@ batch_experiment(50, 1440, "scenario1.csv",
     # Size of population
     population_size=100,
     # Minimal distance between agents for contagion
-    contagion_distance=.1,
+    contagion_distance=1.,
     contagion_rate=.9,
     # Maximum percentage of population which Healthcare System can handle simutaneously
     critical_limit=0.05,

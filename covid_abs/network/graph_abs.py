@@ -292,7 +292,7 @@ class GraphSimulation(Simulation):
 
         self.statistics = None
 
-    def get_statistics(self, kind='ecom'):
+    def get_statistics(self, kind='all'):
         if self.statistics is None:
             self.statistics = {}
             if kind in ['ecom', 'all']:
@@ -302,7 +302,8 @@ class GraphSimulation(Simulation):
                         np.sum([a.wealth for a in self.population if a.is_homeless()])
                 self.statistics['Business'] = np.sum([b.wealth for b in self.business])
                 self.statistics['Government'] = self.government.wealth
-            elif kind == 'ecom2':
+
+            if kind == 'ecom2':
                 self.statistics = {
                     'BusinessWealth': sum([b.wealth for b in self.business]),
                     'BusinessStocks': sum([b.stocks for b in self.business]),
@@ -311,7 +312,7 @@ class GraphSimulation(Simulation):
                     'HousesExpenses': sum([b.expenses for b in self.houses])
                 }
 
-            elif kind == 'ecom3':
+            if kind == 'ecom3':
                 self.statistics = {
                     'AvgHousemates': np.average([h.size for h in self.houses]),
                     'AvgEmployees': np.average([h.num_employees for h in self.business]),
@@ -320,7 +321,8 @@ class GraphSimulation(Simulation):
                     'NumHomeless': np.sum([1 for h in self.population if h.house is None]),
                     'NumInactive': np.sum([1 for h in self.population if h.economical_status == EconomicalStatus.Inactive])
                 }
-            elif kind in ['info', 'all']:
+
+            if kind in ['info', 'all']:
                 for status in Status:
                     self.statistics[status.name] = np.sum(
                         [1 for a in self.population if a.status == status]) / self.population_size
