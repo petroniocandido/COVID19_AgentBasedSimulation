@@ -128,7 +128,9 @@ class GraphSimulation(Simulation):
 
         # Share the common wealth of 10^4 among the population, according each agent social stratum
 
-        self.government.wealth = self.total_wealth/10
+        d = self.total_wealth/10
+
+        self.government.wealth = d
 
         for quintile in [0, 1, 2, 3, 4]:
 
@@ -140,18 +142,18 @@ class GraphSimulation(Simulation):
                 houses = [self.houses[-1]]
                 nhouses = 1
 
-            total = lorenz_curve[quintile] * (5 * (self.total_wealth / 10))
+            btotal = lorenz_curve[quintile] * (5 * d)
 
-            qty = max(1.0, np.sum([1.0 for a in self.business if a.social_stratum == quintile]))
-            ag_share = total / qty
+            bqty = max(1.0, np.sum([1.0 for a in self.business if a.social_stratum == quintile]))
+            ag_share = btotal / bqty
             for bus in filter(lambda x: x.social_stratum == quintile, self.business):
                 bus.wealth = ag_share
 
-            total = lorenz_curve[quintile] * (4 * (self.total_wealth/10))
+            ptotal = lorenz_curve[quintile] * (4 * d)
 
-            qty = max(1.0, np.sum([1 for a in self.population if
+            pqty = max(1.0, np.sum([1 for a in self.population if
                                    a.social_stratum == quintile and a.economical_status == EconomicalStatus.Active]))
-            ag_share = total / qty
+            ag_share = ptotal / pqty
 
             for agent in filter(lambda x: x.social_stratum == quintile, self.population):
 
@@ -298,10 +300,10 @@ class GraphSimulation(Simulation):
             if kind in ['ecom', 'all']:
                 for quintile in [0, 1, 2, 3, 4]:
                     self.statistics['Q{}'.format(quintile + 1)] = np.sum(
-                        [a.wealth for a in self.houses if a.social_stratum == quintile]) + \
-                        np.sum([a.wealth for a in self.population if a.is_homeless()])
-                self.statistics['Business'] = np.sum([b.wealth for b in self.business])
-                self.statistics['Government'] = self.government.wealth
+                        [a.wealth for a in self.population if a.social_stratum == quintile \
+                         and a.economical_status == EconomicalStatus.Active]) / self.total_wealth
+                self.statistics['Business'] = np.sum([b.wealth for b in self.business]) / self.total_wealth
+                self.statistics['Government'] = self.government.wealth / self.total_wealth
 
             if kind == 'ecom2':
                 self.statistics = {

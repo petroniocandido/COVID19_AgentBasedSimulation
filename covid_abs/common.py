@@ -22,6 +22,6 @@ Wealth distribution - Lorenz Curve
 By quintile, source: https://www.worldbank.org/en/topic/poverty/lac-equity-lab1/income-inequality/composition-by-quintile
 """
 
-lorenz_curve = [.04, .08, .13, .2, .56]
+lorenz_curve = [.04, .08, .13, .2, .55]
 share = np.min(lorenz_curve)
 basic_income = np.array(lorenz_curve) / share
