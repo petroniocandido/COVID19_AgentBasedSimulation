@@ -23,11 +23,11 @@ class GraphSimulation(Simulation):
         self.homemates_avg = kwargs.get("homemates_avg", 3)
         self.homemates_std = kwargs.get("homemates_std", 1)
         self.iteration = -1
-        self.population_move_triggers = []
-        self.population_move_home_triggers = []
-        self.population_move_work_triggers = []
-        self.population_move_freely_triggers = []
-        self.population_other_triggers = []
+        self.population_move_triggers = kwargs.get('population_move_triggers', [])
+        self.population_move_home_triggers = kwargs.get('population_move_home_triggers', [])
+        self.population_move_work_triggers = kwargs.get('population_move_work_triggers', [])
+        self.population_move_freely_triggers = kwargs.get('population_move_freely_triggers', [])
+        self.population_other_triggers = kwargs.get('population_other_triggers', [])
 
     def apply_business(self, filter_attribute, filter_value, target_attribute, target_value):
         for bus in self.business:
