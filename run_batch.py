@@ -3,7 +3,7 @@ from covid_abs.network.graph_abs import *
 from covid_abs.network.util import *
 import numpy as np
 
-'''
+#'''
 sim = GraphSimulation(  # Percentage of infected in initial population
     initial_infected_perc=0.01,
     # Percentage of immune in initial population
@@ -30,7 +30,7 @@ sim = GraphSimulation(  # Percentage of infected in initial population
     minimum_income=900.0,
     minimum_expense=650.0
 )
-'''
+#'''
 
 
 # sim.apply_business('open', True, 'open', False)
@@ -42,16 +42,17 @@ def mov_check(a, b):
     return a.x, a.y
 
 
-'''
-sim.append_trigger_population(lambda x: True, 'move_freely', lambda a: (a.x, a.y) )
-sim.append_trigger_population(lambda x: not x.is_unemployed(), 'move_work', lambda a: (a.x, a.y) )
-sim.append_trigger_population(lambda x: True, 'move_home', lambda a: mov_check(a, a.house) )
-'''
+#'''
+#sim.append_trigger_population(lambda x: True, 'move_freely', lambda a: (a.x, a.y) )
+#sim.append_trigger_population(lambda x: not x.is_unemployed(), 'move_work', lambda a: (a.x, a.y) )
+sim.append_trigger_population(lambda x,s: x.status == Status.Infected and x.infected_status == InfectionSeverity.Asymptomatic,
+                              'move', lambda a,s: mov_check(a, a.house) )
+
 
 # anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
-# anim = execute_graphsimulation(sim, iterations=240, iteration_time=25)
+anim = execute_graphsimulation(sim, iterations=240, iteration_time=25)
 
-# anim.save("scenario2.mp4", writer='ffmpeg', fps=60)
+anim.save("scenario2.mp4", writer='ffmpeg', fps=60)
 
 # save_gif(anim, teste.mp4)
 
@@ -72,13 +73,13 @@ for i in range(1440):
     #plt.clf()
     #sleep(1)
     if i%24 == 0:
-        print("{}".format(sim.get_statistics('ecom')))
+        print("{}".format(sim.get_statistics('all')))
     #print("{}".format(sim.get_statistics('ecom')))
     #ax.clear()
     #plt.set_title("{}".format(i))
     #
-    #draw_graph(sim) #, ax=ax)
-    #plt.show()
+    draw_graph(sim) #, ax=ax)
+    plt.show()
 '''
 
 from covid_abs.experiments import batch_experiment, plot_graph_batch_results
@@ -121,10 +122,10 @@ tmp = batch_experiment(35, 1440, "scenario2.csv",
                        ]
                        )
 '''
-#'''
+'''
 df = pd.read_csv('scenario2.csv')
 plot_graph_batch_results(df)
-#'''
+'''
 print("")
 
 """

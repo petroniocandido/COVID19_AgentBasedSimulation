@@ -47,7 +47,7 @@ class GraphSimulation(Simulation):
         :param action: a lambda function that receives the current agent instance and returns the new
         value of the attribute
         """
-        self.triggers_population.append({'condition': condition, 'attribute': attribute, 'action': action})
+        #self.triggers_population.append({'condition': condition, 'attribute': attribute, 'action': action})
 
         if attribute == 'move':
             self.population_move_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
@@ -297,42 +297,21 @@ class GraphSimulation(Simulation):
     def get_statistics(self, kind='all'):
         if self.statistics is None:
             self.statistics = {}
-            if kind in ['ecom', 'all']:
-                for quintile in [0, 1, 2, 3, 4]:
-                    self.statistics['Q{}'.format(quintile + 1)] = np.sum(
-                        [a.wealth for a in self.population if a.social_stratum == quintile \
-                         and a.economical_status == EconomicalStatus.Active]) / self.total_wealth
-                self.statistics['Business'] = np.sum([b.wealth for b in self.business]) / self.total_wealth
-                self.statistics['Government'] = self.government.wealth / self.total_wealth
+            for quintile in [0, 1, 2, 3, 4]:
+                self.statistics['Q{}'.format(quintile + 1)] = np.sum(
+                    [a.wealth for a in self.population if a.social_stratum == quintile \
+                     and a.economical_status == EconomicalStatus.Active]) / self.total_wealth
+            self.statistics['Business'] = np.sum([b.wealth for b in self.business]) / self.total_wealth
+            self.statistics['Government'] = self.government.wealth / self.total_wealth
 
-            if kind == 'ecom2':
-                self.statistics = {
-                    'BusinessWealth': sum([b.wealth for b in self.business]),
-                    'BusinessStocks': sum([b.stocks for b in self.business]),
-                    'BusinessSales': sum([b.sales for b in self.business]),
-                    'HousesWealth': sum([b.wealth for b in self.houses]),
-                    'HousesExpenses': sum([b.expenses for b in self.houses])
-                }
+            for status in Status:
+                self.statistics[status.name] = np.sum(
+                    [1 for a in self.population if a.status == status]) / self.population_size
 
-            if kind == 'ecom3':
-                self.statistics = {
-                    'AvgHousemates': np.average([h.size for h in self.houses]),
-                    'AvgEmployees': np.average([h.num_employees for h in self.business]),
-                    'NumUnemployed': np.sum([1 for h in self.population if h.employer is None
-                                             and h.economical_status == EconomicalStatus.Active]),
-                    'NumHomeless': np.sum([1 for h in self.population if h.house is None]),
-                    'NumInactive': np.sum([1 for h in self.population if h.economical_status == EconomicalStatus.Inactive])
-                }
+            for infected_status in filter(lambda x: x != InfectionSeverity.Exposed, InfectionSeverity):
+                self.statistics[infected_status.name] = np.sum([1 for a in self.population if
+                                                                a.infected_status == infected_status and
+                                                                a.status != Status.Death]) / self.population_size
 
-            if kind in ['info', 'all']:
-                for status in Status:
-                    self.statistics[status.name] = np.sum(
-                        [1 for a in self.population if a.status == status]) / self.population_size
-
-                for infected_status in filter(lambda x: x != InfectionSeverity.Exposed, InfectionSeverity):
-                    self.statistics[infected_status.name] = np.sum([1 for a in self.population if
-                                                                    a.infected_status == infected_status and
-                                                                    a.status != Status.Death]) / self.population_size
-
-        return self.statistics
+        return self.filter_stats(kind)
 

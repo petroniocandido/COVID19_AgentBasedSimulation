@@ -315,9 +315,9 @@ class Simulation(object):
 
     def filter_stats(self, kind):
         if kind == 'info':
-            return {k: v for k, v in self.statistics.items() if not k.startswith('Q')}
+            return {k: v for k, v in self.statistics.items() if not k.startswith('Q') or k not in ('Business','Government')}
         elif kind == 'ecom':
-            return {k: v for k, v in self.statistics.items() if k.startswith('Q')}
+            return {k: v for k, v in self.statistics.items() if k.startswith('Q') or k in ('Business','Government')}
         else:
             return self.statistics
 
