@@ -92,15 +92,20 @@ def batch_experiment(experiments, iterations, file, simulation_type=Simulation, 
     :param kwargs: the parameters of the simulation
     :return: a Pandas Dataframe with the consolidated statistics by iteration
     """
+    verbose = kwargs.get('verbose', None)
     rows = []
     columns = None
     for experiment in range(experiments):
+        if verbose == 'experiments':
+            print('Experiment {}'.format(experiment))
         sim = simulation_type(**kwargs)
         sim.initialize()
         if columns is None:
             statistics = sim.get_statistics(kind='all')
             columns = [k for k in statistics.keys()]
         for it in range(iterations):
+            if verbose == 'iterations':
+                print('Experiment {}\tIteration {}'.format(experiment, it))
             sim.execute()
             statistics = sim.get_statistics(kind='all')
             statistics['iteration'] = it

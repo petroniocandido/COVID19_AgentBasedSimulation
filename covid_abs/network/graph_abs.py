@@ -166,14 +166,15 @@ class GraphSimulation(Simulation):
                     unemployed_test = np.random.rand()
 
                     if unemployed_test >= self.unemployment_rate:
-                        test = True
-                        while test:
+                        for kp in range(5):
                             ix = np.random.randint(0, self.total_business)
                             if self.business[ix].social_stratum in [quintile, quintile+1]:
                                 self.business[ix].hire(agent)
-                                test = False
-                            else:
-                                test = True
+                                continue
+                        if agent.employer is None:
+                            ix = np.random.randint(0, self.total_business)
+                            self.business[ix].hire(agent)
+
 
                 agent.expenses = (agent.social_stratum + 1 ) * self.minimum_expense
 
@@ -182,14 +183,16 @@ class GraphSimulation(Simulation):
                 homeless_test = np.random.rand()
 
                 if not (quintile == 0 and homeless_test <= self.homeless_rate):
-                    test = True
-                    while test:
+                    for kp in range(0, 5):
                         ix = np.random.randint(0, nhouses)
-                        house = houses[ix]
+                        house = self.houses[ix]
                         if house.social_stratum == agent.social_stratum and\
                                 house.size < self.homemates_avg + self.homemates_std:
                             house.append_mate(agent)
-                            test = False
+                            continue
+                    if agent.house is None:
+                        ix = np.random.randint(0, nhouses)
+                        self.houses[ix].append_mate(agent)
 
     def pull_agent_trigger(self, agent, triggers):
         for trigger in triggers:

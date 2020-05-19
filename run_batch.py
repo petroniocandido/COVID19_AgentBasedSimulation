@@ -81,8 +81,9 @@ for i in range(1440):
 
 from covid_abs.experiments import batch_experiment
 
-batch_experiment(50, 80, "scenario0.csv",
+batch_experiment(50, 1440, "scenario1.csv",
                  simulation_type=GraphSimulation,
+                 verbose='experiments',
                  # Percentage of infected in initial population
     initial_infected_perc=0.0,
     # Percentage of immune in initial population
@@ -109,7 +110,6 @@ batch_experiment(50, 80, "scenario0.csv",
     minimum_income=900.0,
     minimum_expense=650.0
   )
-
 print("")
 
 """
