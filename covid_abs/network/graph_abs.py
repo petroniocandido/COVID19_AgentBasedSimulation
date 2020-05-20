@@ -60,6 +60,23 @@ class GraphSimulation(Simulation):
         else:
             self.population_other_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
 
+    def remove_trigger_population(self, attribute, index=-1):
+        if attribute == 'move':
+            if len(self.population_move_triggers) > 0:
+                self.population_move_triggers.pop(index)
+        elif attribute == 'move_home':
+            if len(self.population_move_home_triggers) > 0:
+                self.population_move_home_triggers.pop(index)
+        elif attribute == 'move_work':
+            if len(self.population_move_work_triggers) > 0:
+                self.population_move_work_triggers.pop(index)
+        elif attribute == 'move_freely':
+            if len(self.population_move_freely_triggers) > 0:
+                self.population_move_freely_triggers.pop(index)
+        else:
+            if len(self.population_other_triggers) > 0:
+                self.population_other_triggers.pop(index)
+
     def get_unemployed(self):
         return [p for p in self.population if p.is_unemployed()
                 and p.status != Status.Death and p.infected_status == InfectionSeverity.Asymptomatic]
@@ -293,7 +310,10 @@ class GraphSimulation(Simulation):
             for trigger in self.triggers_simulation:
                 if trigger['condition'](self):
                     attr = trigger['attribute']
-                    self.__dict__[attr] = trigger['action'](self.__dict__[attr])
+                    if attr == 'execute':
+                        trigger['action'](self)
+                    else:
+                        self.__dict__[attr] = trigger['action'](self)
 
         self.statistics = None
 

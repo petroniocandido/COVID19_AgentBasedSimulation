@@ -6,10 +6,13 @@ import numpy as np
 np.random.seed(1)
 
 #'''
-sim = GraphSimulation(  # Percentage of infected in initial population
-    initial_infected_perc=0.0,
+np.random.seed(1)
+
+sim = GraphSimulation(
+    # Percentage of infected in initial population
+    initial_infected_perc=.01,
     # Percentage of immune in initial population
-    initial_immune_perc=1.0,
+    initial_immune_perc=.01,
     # Length of simulation environment
     length=500,
     # Height of simulation environment
@@ -17,8 +20,8 @@ sim = GraphSimulation(  # Percentage of infected in initial population
     # Size of population
     population_size=100,
     # Minimal distance between agents for contagion
-    contagion_distance=1.,
-    contagion_rate=.9,
+    contagion_distance=2.,
+    contagion_rate=.7,
     # Maximum percentage of population which Healthcare System can handle simutaneously
     critical_limit=0.05,
     # Mobility ranges for agents, by Status
@@ -32,6 +35,63 @@ sim = GraphSimulation(  # Percentage of infected in initial population
     minimum_income=900.0,
     minimum_expense=600.0
 )
+
+
+def mov_check(a, b):
+    if b is not None:
+        b.checkin(a)
+    return a.x, a.y
+
+'''
+sim.append_trigger_simulation(
+    lambda s: s.get_statistics()['Infected'] > 0.1,
+    'amplitudes',
+    lambda s: {
+        Status.Susceptible: 0.1,
+        Status.Recovered_Immune: 0.1,
+        Status.Infected: 0.1
+    }
+)
+
+sim.append_trigger_simulation(
+    lambda s: s.get_statistics()['Infected'] > 0.1,
+    'execute',
+    lambda s: s.apply_business('open', True, 'open', False)
+)
+
+sim.append_trigger_simulation(
+    lambda s: s.get_statistics()['Infected'] < 0.1 and s.get_statistics()['Recovered_Immune'] > 0.05,
+    'amplitudes',
+    lambda s: {
+        Status.Susceptible: 10,
+        Status.Recovered_Immune: 10,
+        Status.Infected: 10
+    }
+)
+
+sim.append_trigger_simulation(
+    lambda s: s.get_statistics()['Infected'] < 0.1 and s.get_statistics()['Recovered_Immune'] > 0.05,
+    'execute',
+    lambda s: s.apply_business('open', False, 'open', True)
+)
+'''
+
+#'''
+sim.append_trigger_simulation(
+    lambda s: s.get_statistics()['Infected'] > 0.1,
+    'execute',
+    lambda s: s.append_trigger_population(lambda x, p: True,
+                              'move',
+                              lambda a, p: mov_check(a, a.house) )
+)
+
+sim.append_trigger_simulation(
+    lambda s: s.get_statistics()['Infected'] < 0.1 and s.get_statistics()['Recovered_Immune'] > 0.05,
+    'execute',
+    lambda s: s.remove_trigger_population('move')
+)
+
+#'''
 #'''
 
 
@@ -57,7 +117,7 @@ def mov_check(a, b):
 # anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
 anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
 
-anim.save("scenario0.mp4", writer='ffmpeg', fps=60)
+anim.save("scenario4.mp4", writer='ffmpeg', fps=60)
 
 # save_gif(anim, teste.mp4)
 
