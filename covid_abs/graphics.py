@@ -238,7 +238,7 @@ def clear_graph(ax, linhas1, linhas2):
     return tuple(ret)
 
 
-def update_graph(sim, ax, linhas1, linhas2, statistics):
+def update_graph(sim, ax, linhas1, ax1, linhas2, ax2, statistics):
     """
     Execute an iteration of the simulation and update the animation graphics
 
@@ -260,8 +260,12 @@ def update_graph(sim, ax, linhas1, linhas2, statistics):
     for col in linhas1.keys():
         linhas1[col].set_data(df1.index.values, df1[col].values)
 
+    ymax = 0
     for col in linhas2.keys():
+        ymax = max(ymax, max(df2[col].values))
         linhas2[col].set_data(df2.index.values, df2[col].values)
+
+    ax2.set_ylim(0, ymax)
 
     ret = []
     for l in linhas1.values():
@@ -302,6 +306,7 @@ def execute_graphsimulation(sim, **kwargs):
 
     ax[1].set_title('Contagion Evolution')
     ax[1].set_xlim((0, frames))
+    ax[1].set_ylim((0, 1))
     ax[1].xaxis.set_major_locator(MultipleLocator(tick_unit))
     ax[1].set_xticklabels(tickslabels)
 
@@ -336,7 +341,7 @@ def execute_graphsimulation(sim, **kwargs):
     handles, labels = ax[2].get_legend_handles_labels()
     lgd = ax[2].legend(handles, labels, loc='top right')  # 2, bbox_to_anchor=(1, 1))
 
-    animate = lambda i: update_graph(sim, ax[0], linhas1, linhas2, statistics)
+    animate = lambda i: update_graph(sim, ax[0], linhas1, ax[1], linhas2, ax[2], statistics)
 
     init = lambda: clear_graph(ax[0], linhas1, linhas2)
 

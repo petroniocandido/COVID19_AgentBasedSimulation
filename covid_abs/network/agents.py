@@ -22,41 +22,50 @@ class Business(Agent):
         self.type = AgentType.Business
         self.incomes = 0.0
         self.expenses = 0.0
-        self.labor_expenses = {}
+        #self.labor_expenses = {}
         self.stocks = 10
         self.sales = 0
         self.open = True
         self.type = kwargs.get("type", AgentType.Business)
+        self.price = kwargs.get("price", (self.social_stratum+1) * 12.0)
         self.fixed_expenses = kwargs.get('fixed_expenses', 0.0)
-        self.price = kwargs.get("price", np.max([1.0, (self.social_stratum+1) * 10 + np.random.randn()]))
 
     def cash(self, value):
         self.wealth += value
 
     def hire(self, agent):
-        self.employees.append(agent)
-        self.labor_expenses[agent.id] = 0.0
-        agent.employer = self
-        self.num_employees += 1
+        if agent.status != Status.Death and agent.infected_status == InfectionSeverity.Asymptomatic:
+            self.employees.append(agent)
+            #self.labor_expenses[agent.id] = 0.0
+            agent.employer = self
+            self.num_employees += 1
+            self.fixed_expenses += (agent.expenses / 720) * 24
 
     def fire(self, agent):
         self.employees.remove(agent)
-        self.labor_expenses[agent.id] = None
+        #self.labor_expenses[agent.id] = None
         agent.employer = None
+        agent.supply(agent.incomes)
+        self.cash(-agent.incomes)
         self.num_employees -= 1
+        self.fixed_expenses -= (agent.expenses / 720) * 24
 
     def demand(self, agent):
         """Expenses due to employee payments"""
+        labor = 0
         if agent in self.employees:
-            labor = self.labor_expenses[agent.id]
-            agent.supply(labor)
-            self.labor_expenses[agent.id] = 0
+            #labor = self.labor_expenses[agent.id]
+            if agent.status != Status.Death and agent.infected_status == InfectionSeverity.Asymptomatic:
+                labor = agent.incomes
+                agent.supply(labor)
+            #self.labor_expenses[agent.id] = 0
         elif agent.type == AgentType.Healthcare:
             labor = agent.expenses
             agent.cash(labor)
         else:
-            labor = agent.expenses
-            agent.supply(labor)
+            if agent.status != Status.Death and agent.infected_status == InfectionSeverity.Asymptomatic:
+                labor = agent.expenses
+                agent.supply(labor)
 
         self.cash(-labor)
 
@@ -81,13 +90,14 @@ class Business(Agent):
         """Employee is working"""
         if self.type == AgentType.Business:
             self.stocks += 1
-            self.labor_expenses[agent.id] += agent.income / 160
+            self.cash(-agent.expenses/720)
+            #self.labor_expenses[agent.id] += agent.income / 160
         elif self.type == AgentType.Healthcare:
             self.expenses += agent.expenses
 
     def taxes(self, government):
         """Expenses due to employee payments"""
-        tax = government.price * self.num_employees + government.price * self.social_stratum
+        tax = government.price * self.num_employees + self.incomes/20
         government.cash(tax)
         self.cash(-tax)
         return tax
@@ -120,16 +130,19 @@ class Business(Agent):
 
     def update(self, simulation):
         if self.type != AgentType.Government:
-            self.cash(-self.fixed_expenses)
             simulation.government.cash(self.fixed_expenses/3)
-            test = True
-            while test:
+            self.cash(-self.fixed_expenses) #The money get out of this local economy - this effect is represented by foreign markets (suppliers) and financial system
+            ''' 
+            This represents the exchanges between the business or business to business market 
+            
+            for pk in range(2):
                 ix = np.random.randint(0, simulation.total_business)
                 bus = simulation.business[ix]
                 if bus.id != self.id:
-                    bus.cash(self.fixed_expenses/2)
-                    test = False
+                    bus.cash(self.fixed_expenses/3)
+            '''
         else:
+            # This represents the public spending in the local economy
             ix = np.random.randint(0, simulation.total_business)
             simulation.business[ix].supply(self)
 
@@ -157,6 +170,13 @@ class House(Agent):
         x, y = np.random.normal(0.0, 0.25, 2)
         agent.x = int(self.x + x)
         agent.y = int(self.y + y)
+        self.fixed_expenses += (agent.expenses / 720) * 24
+
+    def remove_mate(self, agent):
+        self.homemates.remove(agent)
+        self.wealth -= agent.wealth/2
+        self.size -= 1
+        self.fixed_expenses -= (agent.expenses / 720) * 24
 
     def checkin(self, agent):
         self.demand(agent.expenses/720)
@@ -173,18 +193,21 @@ class House(Agent):
 
     def accounting(self, sim):
         """Expenses due to employee payments"""
-        tax = sim.government.price * len(self.homemates) + sim.government.price * self.social_stratum
+        tax = sim.government.price * len(self.homemates) + self.expenses/10
         sim.government.cash(tax)
         self.wealth -= tax
         self.incomes = 0
         self.expenses = 0
 
     def update(self, simulation):
-        #self.demand(self.fixed_expenses)
-        simulation.government.cash(self.fixed_expenses/5)
+        #self.demand(self.fixed_expenses) # the money get out of the local economy
+        simulation.government.cash(self.fixed_expenses/10) # daily taxes
+
+        '''
         for i in np.arange(0, 5):
             ix = np.random.randint(0, simulation.total_business)
-            simulation.business[ix].cash(self.fixed_expenses/5)
+            simulation.business[ix].cash(self.fixed_expenses/10)
+        '''
 
 
 class Person(Agent):
@@ -299,6 +322,15 @@ class Person(Agent):
                     if stats['Severe'] + stats['Hospitalization'] >= simulation.critical_limit:
                         self.status = Status.Death
                         self.infected_status = InfectionSeverity.Asymptomatic
+                        if self.house is not None:
+                            self.house.remove_mate(self)
+                        else:
+                            simulation.government.cash(-self.expenses)
+
+                        if self.employer is not None:
+                            self.employer.fire(self)
+                        else:
+                            simulation.government.cash(-self.expenses)
 
             death_test = np.random.random()
             if age_death_probs[ix] > death_test:
