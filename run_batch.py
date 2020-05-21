@@ -20,8 +20,8 @@ sim = GraphSimulation(
     # Size of population
     population_size=100,
     # Minimal distance between agents for contagion
-    contagion_distance=2.,
-    contagion_rate=.7,
+    contagion_distance=1.,
+    contagion_rate=.5,
     # Maximum percentage of population which Healthcare System can handle simutaneously
     critical_limit=0.05,
     # Mobility ranges for agents, by Status
@@ -31,7 +31,7 @@ sim = GraphSimulation(
         Status.Infected: 10
     },
     total_wealth=10000000,
-    total_business=10,
+    total_business=2,
     minimum_income=900.0,
     minimum_expense=600.0
 )
@@ -76,7 +76,7 @@ sim.append_trigger_simulation(
 )
 '''
 
-#'''
+'''
 sim.append_trigger_simulation(
     lambda s: s.get_statistics()['Infected'] > 0.1,
     'execute',
@@ -91,7 +91,7 @@ sim.append_trigger_simulation(
     lambda s: s.remove_trigger_population('move')
 )
 
-#'''
+'''
 #'''
 
 
@@ -115,9 +115,9 @@ def mov_check(a, b):
 
 
 # anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
-anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
+anim = execute_graphsimulation(sim, iterations=720, iteration_time=25)
 
-anim.save("scenario4.mp4", writer='ffmpeg', fps=60)
+anim.save("scenario1.mp4", writer='ffmpeg', fps=60)
 
 # save_gif(anim, teste.mp4)
 

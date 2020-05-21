@@ -102,19 +102,20 @@ class GraphSimulation(Simulation):
                                  #fixed_expenses=(social_stratum+1)*self.minimum_expense/(self.homemates_avg*10
                                  ))
 
-    def create_agent(self, status, social_stratum=None):
+    def create_agent(self, status, social_stratum=None, infected_time=0):
         """
         Create a new agent with the given status
 
+        :param infected_time:
+        :param social_stratum:
         :param status: a value of agents.Status enum
         :return: the newly created agent
         """
-        #x, y = self.random_position()
 
         age = int(np.random.beta(2, 5, 1) * 100)
         if social_stratum is None:
             social_stratum = int(np.random.rand(1) * 100 // 20)
-        self.population.append(Person(age=age, status=status, social_stratum=social_stratum))
+        self.population.append(Person(age=age, status=status, social_stratum=social_stratum, infected_time=infected_time))
 
     def initialize(self):
         """
@@ -138,7 +139,7 @@ class GraphSimulation(Simulation):
 
         # Initial infected population
         for i in np.arange(0, int(self.population_size * self.initial_infected_perc)):
-            self.create_agent(Status.Infected)
+            self.create_agent(Status.Infected, infected_time=1)
 
         # Initial immune population
         for i in np.arange(0, int(self.population_size * self.initial_immune_perc)):
@@ -255,8 +256,8 @@ class GraphSimulation(Simulation):
                 elif (work_dy and work) and not self.pull_agent_trigger(agent, self.population_move_work_triggers):
                     agent.move_to_work(amplitude)
 
-            agent.x = self._xclip(agent.x)
-            agent.y = self._yclip(agent.y)
+            #agent.x = self._xclip(agent.x)
+            #agent.y = self._yclip(agent.y)
 
             self.pull_agent_trigger(agent, self.population_other_triggers)
 

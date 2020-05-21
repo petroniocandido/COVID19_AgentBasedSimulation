@@ -51,7 +51,7 @@ class Agent(object):
         """The health status of the agent"""
         self.infected_status = InfectionSeverity.Asymptomatic
         """The infection severity of the agent"""
-        self.infected_time = 0
+        self.infected_time = kwargs.get('infected_time', 0)
         """The time (in days) after the infection"""
         self.age = kwargs.get('age', 0)
         """The age (in years) of the agent"""
