@@ -317,6 +317,22 @@ class GraphSimulation(Simulation):
 
         self.statistics = None
 
+    def contact(self, agent1, agent2):
+        """
+        Performs the actions needed when two agents get in touch.
+
+        :param agent1: an instance of agents.Agent
+        :param agent2: an instance of agents.Agent
+        """
+
+        if agent1.status == Status.Susceptible and agent2.status == Status.Infected:
+            if 1 < agent2.infected_time < 15:
+                contagion_test = np.random.random()
+                agent1.infection_status = InfectionSeverity.Exposed
+                if contagion_test <= self.contagion_rate:
+                    agent1.status = Status.Infected
+                    agent1.infection_status = InfectionSeverity.Asymptomatic
+
     def get_statistics(self, kind='all'):
         if self.statistics is None:
             self.statistics = {}
