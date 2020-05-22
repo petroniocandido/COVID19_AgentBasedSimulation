@@ -3,10 +3,10 @@ from covid_abs.network.graph_abs import *
 from covid_abs.network.util import *
 import numpy as np
 
-np.random.seed(1)
+#np.random.seed(1)
 
 #'''
-np.random.seed(1)
+#np.random.seed(1)
 
 sim = GraphSimulation(
     # Percentage of infected in initial population
@@ -20,8 +20,8 @@ sim = GraphSimulation(
     # Size of population
     population_size=100,
     # Minimal distance between agents for contagion
-    contagion_distance=1.,
-    contagion_rate=.5,
+    contagion_distance=.5,
+    contagion_rate=.9,
     # Maximum percentage of population which Healthcare System can handle simutaneously
     critical_limit=0.05,
     # Mobility ranges for agents, by Status
@@ -31,7 +31,7 @@ sim = GraphSimulation(
         Status.Infected: 10
     },
     total_wealth=10000000,
-    total_business=2,
+    total_business=3,
     minimum_income=900.0,
     minimum_expense=600.0
 )

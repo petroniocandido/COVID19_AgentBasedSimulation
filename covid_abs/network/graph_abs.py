@@ -28,6 +28,11 @@ class GraphSimulation(Simulation):
         self.population_move_work_triggers = kwargs.get('population_move_work_triggers', [])
         self.population_move_freely_triggers = kwargs.get('population_move_freely_triggers', [])
         self.population_other_triggers = kwargs.get('population_other_triggers', [])
+        self.public_gdp_share = kwargs.get('public_gdp_share', 0.1)
+        self.business_gdp_share = kwargs.get('business_gdp_share', 0.5)
+        self.incubation_time = kwargs.get('incubation_time', 5)
+        self.contagion_time = kwargs.get('contagion_time', 10)
+        self.recovering_time = kwargs.get('recovering_time', 20)
 
     def apply_business(self, filter_attribute, filter_value, target_attribute, target_value):
         for bus in self.business:
@@ -135,11 +140,11 @@ class GraphSimulation(Simulation):
 
         # number of business
         for i in np.arange(0, self.total_business):
-            self.create_business(social_stratum=i % 5)
+            self.create_business(social_stratum=5 - (i % 5))
 
         # Initial infected population
         for i in np.arange(0, int(self.population_size * self.initial_infected_perc)):
-            self.create_agent(Status.Infected, infected_time=1)
+            self.create_agent(Status.Infected, infected_time=5)
 
         # Initial immune population
         for i in np.arange(0, int(self.population_size * self.initial_immune_perc)):
@@ -151,9 +156,7 @@ class GraphSimulation(Simulation):
 
         # Share the common wealth of 10^4 among the population, according each agent social stratum
 
-        d = self.total_wealth/10
-
-        self.government.wealth = d
+        self.government.wealth = self.total_wealth * self.public_gdp_share
 
         for quintile in [0, 1, 2, 3, 4]:
 
@@ -165,14 +168,18 @@ class GraphSimulation(Simulation):
                 _houses = [self.houses[-1]]
                 nhouses = 1
 
-            btotal = lorenz_curve[quintile] * (5 * d)
+            if self.total_business > 5:
+                btotal = lorenz_curve[quintile] * (self.total_wealth * self.business_gdp_share)
+                bqty = max(1.0, np.sum([1.0 for a in self.business if a.social_stratum == quintile]))
+            else:
+                btotal = self.total_wealth * self.business_gdp_share
+                bqty = self.total_business
 
-            bqty = max(1.0, np.sum([1.0 for a in self.business if a.social_stratum == quintile]))
             ag_share = btotal / bqty
             for bus in filter(lambda x: x.social_stratum == quintile, self.business):
                 bus.wealth = ag_share
 
-            ptotal = lorenz_curve[quintile] * (4 * d)
+            ptotal = lorenz_curve[quintile] * self.total_wealth * (1 - (self.public_gdp_share + self.business_gdp_share))
 
             pqty = max(1.0, np.sum([1 for a in self.population if
                                    a.social_stratum == quintile and a.economical_status == EconomicalStatus.Active]))
@@ -191,14 +198,8 @@ class GraphSimulation(Simulation):
                     unemployed_test = np.random.rand()
 
                     if unemployed_test >= self.unemployment_rate:
-                        for kp in range(5):
-                            ix = np.random.randint(0, self.total_business)
-                            if self.business[ix].social_stratum in [quintile, quintile+1]:
-                                self.business[ix].hire(agent)
-                                continue
-                        if agent.employer is None:
-                            ix = np.random.randint(0, self.total_business)
-                            self.business[ix].hire(agent)
+                        ix = np.random.randint(0, self.total_business)
+                        self.business[ix].hire(agent)
 
                 agent.expenses = basic_income[agent.social_stratum] * self.minimum_expense
 
@@ -231,6 +232,8 @@ class GraphSimulation(Simulation):
     def execute(self):
         self.iteration += 1
 
+        #print(self.iteration)
+
         bed = bed_time(self.iteration)
         work = work_time(self.iteration)
         free = free_time(self.iteration)
@@ -261,21 +264,22 @@ class GraphSimulation(Simulation):
 
             self.pull_agent_trigger(agent, self.population_other_triggers)
 
-            for bus in filter(lambda x: x != agent.employer, self.business):
-                if distance(agent, bus) <= self.business_distance:
-                    bus.supply(agent)
-
             if new_dy:
                 agent.update(self)
 
-        for bus in self.business:
+            if agent.infected_status == InfectionSeverity.Asymptomatic:
+                for bus in filter(lambda x: x != agent.employer, self.business):
+                    if distance(agent, bus) <= self.business_distance:
+                        bus.supply(agent)
+
+        for bus in filter(lambda b: b.open, self.business):
             if new_dy:
                 bus.update(self)
 
             if self.iteration > 1 and new_mth:
                 bus.accounting(self)
 
-        for house in self.houses:
+        for house in filter(lambda h: h.size > 0, self.houses):
             if new_dy:
                 house.update(self)
 
@@ -327,9 +331,12 @@ class GraphSimulation(Simulation):
         """
 
         if agent1.status == Status.Susceptible and agent2.status == Status.Infected:
-            if 1 < agent2.infected_time < 15:
+            low = np.random.randint(-1, 1)
+            up = np.random.randint(-1, 1)
+            if agent2.infected_time >= self.incubation_time + low \
+                    and agent2.infected_time <= self.contagion_time + up:
                 contagion_test = np.random.random()
-                agent1.infection_status = InfectionSeverity.Exposed
+                #agent1.infection_status = InfectionSeverity.Exposed
                 if contagion_test <= self.contagion_rate:
                     agent1.status = Status.Infected
                     agent1.infection_status = InfectionSeverity.Asymptomatic

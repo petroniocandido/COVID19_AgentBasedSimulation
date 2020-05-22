@@ -339,7 +339,7 @@ class Person(Agent):
                 self.move_to_home(0)
                 return
 
-            if self.infected_time > 20:
+            if self.infected_time > simulation.recovering_time:
                 self.infected_time = 0
                 self.status = Status.Recovered_Immune
                 self.infected_status = InfectionSeverity.Asymptomatic
