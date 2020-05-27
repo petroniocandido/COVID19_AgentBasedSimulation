@@ -61,6 +61,7 @@ class Agent(object):
         """The current wealth of the agent"""
         self.type = AgentType.Person
         """The type of the agent"""
+        self.environment = kwargs.get('environment', None)
 
     def get_description(self):
         """

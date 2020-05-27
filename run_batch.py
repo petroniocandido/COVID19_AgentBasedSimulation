@@ -3,44 +3,109 @@ from covid_abs.network.graph_abs import *
 from covid_abs.network.util import *
 import numpy as np
 
-#np.random.seed(1)
 
-#'''
-#np.random.seed(1)
+global_parameters = dict(
 
-sim = GraphSimulation(
-    # Percentage of infected in initial population
-    initial_infected_perc=.01,
-    # Percentage of immune in initial population
-    initial_immune_perc=.01,
-    # Length of simulation environment
-    length=500,
-    # Height of simulation environment
-    height=500,
-    # Size of population
-    population_size=100,
-    # Minimal distance between agents for contagion
-    contagion_distance=.5,
-    contagion_rate=.9,
-    # Maximum percentage of population which Healthcare System can handle simutaneously
-    critical_limit=0.05,
-    # Mobility ranges for agents, by Status
+    # General Parameters
+    length=1000,
+    height=1000,
+
+    # Demographic
+    population_size=300,
+    homemates_avg=3,
+    homeless_rate=0.0005,
     amplitudes={
         Status.Susceptible: 10,
         Status.Recovered_Immune: 10,
         Status.Infected: 10
     },
+
+    # Epidemiological
+    critical_limit=0.05,
+    contagion_rate=.9,
+    incubation_time=5,
+    contagion_time=10,
+    recovering_time=20,
+
+    # Economical
     total_wealth=10000000,
-    total_business=3,
+    total_business=9,
     minimum_income=900.0,
-    minimum_expense=600.0
+    minimum_expense=600.0,
+    public_gdp_share=0.1,
+    business_gdp_share=0.5,
+    unemployment_rate=0.12,
+    business_distance=20
 )
 
+def sleep(a):
+    if not new_day(a.iteration) and bed_time(a.iteration):
+        return True
 
-def mov_check(a, b):
-    if b is not None:
-        b.checkin(a)
-    return a.x, a.y
+
+def lockdown(a):
+    if a.house is not None:
+        a.house.checkin(a)
+    return True
+
+
+def conditional_lockdown(a):
+    if a.environment.get_statistics()['Infected'] > .05:
+        return lockdown(a)
+    else:
+        return False
+
+
+scenario0 = dict(
+    name='scenario0',
+    initial_infected_perc=.0,
+    initial_immune_perc=1.,
+    contagion_distance=1.,
+    callbacks={'on_execute': lambda x: sleep(x) }
+)
+
+scenario1 = dict(
+    name='scenario1',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={'on_execute': lambda x: sleep(x) }
+)
+
+scenario3 = dict(
+    name='scenario3',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_execute': lambda x: sleep(x),
+        'on_person_move': lambda x: lockdown(x)
+    }
+)
+
+scenario4 = dict(
+    name='scenario4',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_execute': lambda x: sleep(x),
+        'on_person_move': lambda x: conditional_lockdown(x)
+    }
+)
+
+#np.random.seed(1)
+
+#'''
+#np.random.seed(1)
+
+for scenario in [scenario0, scenario1, scenario3, scenario4]:
+    sim = GraphSimulation(
+        **{**global_parameters, **scenario}
+    )
+    anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
+
+    anim.save("{}.mp4".format(scenario['name']), writer='ffmpeg', fps=60)
 
 '''
 sim.append_trigger_simulation(
@@ -115,9 +180,6 @@ def mov_check(a, b):
 
 
 # anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
-anim = execute_graphsimulation(sim, iterations=720, iteration_time=25)
-
-anim.save("scenario1.mp4", writer='ffmpeg', fps=60)
 
 # save_gif(anim, teste.mp4)
 

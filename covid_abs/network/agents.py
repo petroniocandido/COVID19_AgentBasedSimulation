@@ -95,56 +95,63 @@ class Business(Agent):
         elif self.type == AgentType.Healthcare:
             self.expenses += agent.expenses
 
-    def taxes(self, government):
+    def taxes(self):
         """Expenses due to employee payments"""
-        tax = government.price * self.num_employees + self.incomes/20
-        government.cash(tax)
+        tax = self.environment.government.price * self.num_employees + self.incomes/20
+        self.environment.government.cash(tax)
         self.cash(-tax)
         return tax
 
-    def accounting(self, sim):
+    def accounting(self):
+        
+        if self.environment.callback('on_business_accounting', self):
+            return 
+        
         if self.type == AgentType.Business:
             labor = 0.0
             for person in self.employees:
                 labor += self.demand(person)
-            tax = self.taxes(sim.government)
+            tax = self.taxes()
 
             if 2 * (labor + tax) < self.incomes:
-                unemployed = sim.get_unemployed()
+                unemployed = self.environment.get_unemployed()
                 ix = np.random.randint(0, len(unemployed))
                 self.hire(unemployed[ix])
             elif (labor + tax) > self.incomes:
                 ix = np.random.randint(0, self.num_employees)
                 self.fire(self.employees[ix])
         elif self.type == AgentType.Healthcare:
-            sim.government.demand(self)
+            self.environment.government.demand(self)
         elif self.type == AgentType.Government:
-            self.demand(sim.healthcare)
-            for person in sim.get_homeless():
+            self.demand(self.environment.healthcare)
+            for person in self.environment.get_homeless():
                 self.demand(person)
-            for person in sim.get_unemployed():
+            for person in self.environment.get_unemployed():
                 self.demand(person)
 
         self.incomes = 0
         self.sales = 0
 
-    def update(self, simulation):
+    def update(self):
+        if self.environment.callback('on_business_update', self):
+            return 
+        
         if self.type != AgentType.Government:
-            simulation.government.cash(self.fixed_expenses/3)
+            self.environment.government.cash(self.fixed_expenses/3)
             self.cash(-self.fixed_expenses) #The money get out of this local economy - this effect is represented by foreign markets (suppliers) and financial system
             ''' 
             This represents the exchanges between the business or business to business market 
             
             for pk in range(2):
-                ix = np.random.randint(0, simulation.total_business)
-                bus = simulation.business[ix]
+                ix = np.random.randint(0, self.environment.total_business)
+                bus = self.environment.business[ix]
                 if bus.id != self.id:
                     bus.cash(self.fixed_expenses/3)
             '''
         else:
             # This represents the public spending in the local economy
-            ix = np.random.randint(0, simulation.total_business)
-            simulation.business[ix].supply(self)
+            ix = np.random.randint(0, self.environment.total_business)
+            self.environment.business[ix].supply(self)
 
 
 class House(Agent):
@@ -191,22 +198,28 @@ class House(Agent):
         self.wealth += value
         self.incomes += value
 
-    def accounting(self, sim):
+    def accounting(self):
+        if self.environment.callback('on_house_accounting', self):
+            return 
+        
         """Expenses due to employee payments"""
-        tax = sim.government.price * len(self.homemates) + self.expenses/10
-        sim.government.cash(tax)
+        tax = self.environment.government.price * len(self.homemates) + self.expenses/10
+        self.environment.government.cash(tax)
         self.wealth -= tax
         self.incomes = 0
         self.expenses = 0
 
-    def update(self, simulation):
+    def update(self):
+        if self.environment.callback('on_house_update', self):
+            return 
+            
         #self.demand(self.fixed_expenses) # the money get out of the local economy
-        simulation.government.cash(self.fixed_expenses/10) # daily taxes
+        self.environment.government.cash(self.fixed_expenses/10) # daily taxes
 
         '''
         for i in np.arange(0, 5):
-            ix = np.random.randint(0, simulation.total_business)
-            simulation.business[ix].cash(self.fixed_expenses/10)
+            ix = np.random.randint(0, self.environment.total_business)
+            self.environment.business[ix].cash(self.fixed_expenses/10)
         '''
 
 
@@ -247,7 +260,11 @@ class Person(Agent):
         else:
             self.wealth += value
 
-    def move_to_work(self, amplitude):
+    def move_to_work(self):
+        if self.environment.callback('on_person_move', self) or \
+                self.environment.callback('on_person_move_to_work', self):
+            return
+        
         if self.infected_status != InfectionSeverity.Asymptomatic:
             return
 
@@ -258,9 +275,13 @@ class Person(Agent):
                 self.y = int(self.employer.y + y)
                 self.employer.checkin(self)
             elif self.employer is None:
-                self.move_freely(amplitude)
+                self.move_freely()
 
-    def move_to_home(self, amplitude):
+    def move_to_home(self):
+        if self.environment.callback('on_person_move', self) or \
+                self.environment.callback('on_person_move_to_home', self):
+            return
+
         if self.infected_status != InfectionSeverity.Asymptomatic:
             return
 
@@ -271,17 +292,25 @@ class Person(Agent):
             self.y = int(self.house.y + y)
         else:
             self.wealth -= self.incomes / 720
-            self.move_freely(amplitude)
+            self.move_freely()
 
-    def move_freely(self, amplitude):
+    def move_freely(self):
+        if self.environment.callback('on_person_move', self) or \
+                self.environment.callback('on_person_move_freely', self):
+            return
+
         if self.infected_status != InfectionSeverity.Asymptomatic:
             return
 
-        x,y = np.random.normal(0, amplitude, 2)
+        x,y = np.random.normal(0, self.environment.amplitudes[self.status], 2)
         self.x = int(self.x + x)
         self.y = int(self.y + y)
 
     def move_to(self, agent):
+        if self.environment.callback('on_person_move', self) or \
+                self.environment.callback('on_person_move_to', self, agent):
+            return
+
         x, y = np.random.normal(0.0, 0.25, 2)
         self.x = int(agent.x + x)
         self.y = int(agent.y + y)
@@ -294,12 +323,15 @@ class Person(Agent):
         else:
             return value <= self.wealth
 
-    def update(self, simulation):
+    def update(self):
         """
         Update the status of the agent
 
         :param agent: an instance of agents.Agent
         """
+
+        if self.environment.callback('on_person_update', self):
+            return
 
         if self.status == Status.Death:
             return
@@ -314,32 +346,32 @@ class Person(Agent):
             if self.infected_status == InfectionSeverity.Asymptomatic:
                 if age_hospitalization_probs[ix] > test_sub:
                     self.infected_status = InfectionSeverity.Hospitalization
-                    self.move_to(simulation.healthcare)
+                    self.move_to(self.environment.healthcare)
             elif self.infected_status == InfectionSeverity.Hospitalization:
                 if age_severe_probs[ix] > test_sub:
                     self.infected_status = InfectionSeverity.Severe
-                    stats = simulation.get_statistics(kind='info')
-                    if stats['Severe'] + stats['Hospitalization'] >= simulation.critical_limit:
+                    stats = self.environment.get_statistics(kind='info')
+                    if stats['Severe'] + stats['Hospitalization'] >= self.environment.critical_limit:
                         self.status = Status.Death
                         self.infected_status = InfectionSeverity.Asymptomatic
                         if self.house is not None:
                             self.house.remove_mate(self)
                         else:
-                            simulation.government.cash(-self.expenses)
+                            self.environment.government.cash(-self.expenses)
 
                         if self.employer is not None:
                             self.employer.fire(self)
                         else:
-                            simulation.government.cash(-self.expenses)
+                            self.environment.government.cash(-self.expenses)
 
             death_test = np.random.random()
             if age_death_probs[ix] > death_test:
                 self.status = Status.Death
                 self.infected_status = InfectionSeverity.Asymptomatic
-                self.move_to_home(0)
+                self.move_to_home()
                 return
 
-            if self.infected_time > simulation.recovering_time:
+            if self.infected_time > self.environment.recovering_time:
                 self.infected_time = 0
                 self.status = Status.Recovered_Immune
                 self.infected_status = InfectionSeverity.Asymptomatic

@@ -23,64 +23,21 @@ class GraphSimulation(Simulation):
         self.homemates_avg = kwargs.get("homemates_avg", 3)
         self.homemates_std = kwargs.get("homemates_std", 1)
         self.iteration = -1
-        self.population_move_triggers = kwargs.get('population_move_triggers', [])
-        self.population_move_home_triggers = kwargs.get('population_move_home_triggers', [])
-        self.population_move_work_triggers = kwargs.get('population_move_work_triggers', [])
-        self.population_move_freely_triggers = kwargs.get('population_move_freely_triggers', [])
-        self.population_other_triggers = kwargs.get('population_other_triggers', [])
+        self.callbacks = kwargs.get('callbacks', {})
         self.public_gdp_share = kwargs.get('public_gdp_share', 0.1)
         self.business_gdp_share = kwargs.get('business_gdp_share', 0.5)
         self.incubation_time = kwargs.get('incubation_time', 5)
         self.contagion_time = kwargs.get('contagion_time', 10)
         self.recovering_time = kwargs.get('recovering_time', 20)
 
-    def apply_business(self, filter_attribute, filter_value, target_attribute, target_value):
-        for bus in self.business:
-            if bus.__dict__[filter_attribute] == filter_value:
-                bus.__dict__[target_attribute] == target_value
+    def register_callback(self, event, action):
+        self.callbacks[event] = action
 
-    def apply_government(self, filter_attribute, filter_value, target_attribute, target_value):
-        if self.government.__dict__[filter_attribute] == filter_value:
-            self.government.__dict__[target_attribute] == target_value
+    def callback(self, event, *args):
+        if event in self.callbacks:
+            return self.callbacks[event](*args)
 
-    def append_trigger_population(self, condition, attribute, action):
-        """
-        Append a conditional change in the population attributes
-
-        :param condition: a lambda function that receives the current agent instance and returns a boolean
-        :param attribute: string, the attribute name of the agent which will be changed
-        :param action: a lambda function that receives the current agent instance and returns the new
-        value of the attribute
-        """
-        #self.triggers_population.append({'condition': condition, 'attribute': attribute, 'action': action})
-
-        if attribute == 'move':
-            self.population_move_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
-        elif attribute == 'move_home':
-            self.population_move_home_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
-        elif attribute == 'move_work':
-            self.population_move_work_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
-        elif attribute == 'move_freely':
-            self.population_move_freely_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
-        else:
-            self.population_other_triggers.append({'condition': condition, 'attribute': attribute, 'action': action})
-
-    def remove_trigger_population(self, attribute, index=-1):
-        if attribute == 'move':
-            if len(self.population_move_triggers) > 0:
-                self.population_move_triggers.pop(index)
-        elif attribute == 'move_home':
-            if len(self.population_move_home_triggers) > 0:
-                self.population_move_home_triggers.pop(index)
-        elif attribute == 'move_work':
-            if len(self.population_move_work_triggers) > 0:
-                self.population_move_work_triggers.pop(index)
-        elif attribute == 'move_freely':
-            if len(self.population_move_freely_triggers) > 0:
-                self.population_move_freely_triggers.pop(index)
-        else:
-            if len(self.population_other_triggers) > 0:
-                self.population_other_triggers.pop(index)
+        return False
 
     def get_unemployed(self):
         return [p for p in self.population if p.is_unemployed()
@@ -97,15 +54,18 @@ class GraphSimulation(Simulation):
         self.business.append(Business(x=x, y=y, status=Status.Susceptible, social_stratum=social_stratum,
                                       #fixed_expenses=(social_stratum+1)*self.minimum_expense
                                       #fixed_expenses=self.minimum_expense / (5 - social_stratum)
+                                      environment=self
                                       ))
 
     def create_house(self, social_stratum=None):
         x, y = self.random_position()
         if social_stratum is None:
             social_stratum = int(np.random.rand(1) * 100 // 20)
-        self.houses.append(House(x=x, y=y, status=Status.Susceptible, social_stratum=social_stratum,
+        house = House(x=x, y=y, status=Status.Susceptible, social_stratum=social_stratum,
                                  #fixed_expenses=(social_stratum+1)*self.minimum_expense/(self.homemates_avg*10
-                                 ))
+                      environment=self)
+        self.callback('on_create_house', house)
+        self.houses.append(house)
 
     def create_agent(self, status, social_stratum=None, infected_time=0):
         """
@@ -120,18 +80,21 @@ class GraphSimulation(Simulation):
         age = int(np.random.beta(2, 5, 1) * 100)
         if social_stratum is None:
             social_stratum = int(np.random.rand(1) * 100 // 20)
-        self.population.append(Person(age=age, status=status, social_stratum=social_stratum, infected_time=infected_time))
+        person = Person(age=age, status=status, social_stratum=social_stratum, infected_time=infected_time,
+                        environment=self)
+        self.callback('on_create_person', person)
+        self.population.append(person)
 
     def initialize(self):
         """
         Initializate the Simulation by creating its population of agents
         """
         x, y = self.random_position()
-        self.healthcare = Business(x=x, y=y, status=Status.Susceptible, type=AgentType.Healthcare)
+        self.healthcare = Business(x=x, y=y, status=Status.Susceptible, type=AgentType.Healthcare, environment=self)
         self.healthcare.fixed_expenses += self.minimum_expense * 3
         x, y = self.random_position()
         self.government = Business(x=x, y=y, status=Status.Susceptible, type=AgentType.Government,
-                                   social_stratum=4, price=1.0)
+                                   social_stratum=4, price=1.0, environment=self)
         self.government.fixed_expenses += self.population_size * (self.minimum_expense*0.05)
 
         #number of houses
@@ -218,19 +181,13 @@ class GraphSimulation(Simulation):
                         ix = np.random.randint(0, nhouses)
                         self.houses[ix].append_mate(agent)
 
-    def pull_agent_trigger(self, agent, triggers):
-        for trigger in triggers:
-            if trigger['condition'](agent, self):
-                if trigger['attribute'].startswith('move'):
-                    agent.x, agent.y = trigger['action'](agent, self)
-                else:
-                    attr = trigger['attribute']
-                    agent.__dict__[attr] = trigger['action'](agent.__dict__[attr])
-                return True
-        return False
-
     def execute(self):
+
         self.iteration += 1
+
+        if self.callback('on_execute', self):
+            return
+
 
         #print(self.iteration)
 
@@ -246,26 +203,21 @@ class GraphSimulation(Simulation):
         #    print("Day {}".format(self.iteration // 24))
 
         for agent in filter(lambda x: x.status != Status.Death, self.population):
-            amplitude = self.amplitudes[agent.status]
 
-            if not self.pull_agent_trigger(agent, self.population_move_triggers):
-                if bed and not self.pull_agent_trigger(agent, self.population_move_home_triggers):
-                    agent.move_to_home(amplitude)
+            if bed:
+                agent.move_to_home()
 
-                elif (lunch or free or not work_dy) and \
-                        not self.pull_agent_trigger(agent, self.population_move_freely_triggers):
-                    agent.move_freely(amplitude)
+            elif lunch or free or not work_dy:
+                agent.move_freely()
 
-                elif (work_dy and work) and not self.pull_agent_trigger(agent, self.population_move_work_triggers):
-                    agent.move_to_work(amplitude)
+            elif work_dy and work:
+                agent.move_to_work()
 
             #agent.x = self._xclip(agent.x)
             #agent.y = self._yclip(agent.y)
 
-            self.pull_agent_trigger(agent, self.population_other_triggers)
-
             if new_dy:
-                agent.update(self)
+                agent.update()
 
             if agent.infected_status == InfectionSeverity.Asymptomatic:
                 for bus in filter(lambda x: x != agent.employer, self.business):
@@ -274,24 +226,24 @@ class GraphSimulation(Simulation):
 
         for bus in filter(lambda b: b.open, self.business):
             if new_dy:
-                bus.update(self)
+                bus.update()
 
             if self.iteration > 1 and new_mth:
-                bus.accounting(self)
+                bus.accounting()
 
         for house in filter(lambda h: h.size > 0, self.houses):
             if new_dy:
-                house.update(self)
+                house.update()
 
             if self.iteration > 1 and new_mth:
-                house.accounting(self)
+                house.accounting()
 
         if new_dy:
-            self.government.update(self)
-            self.healthcare.update(self)
+            self.government.update()
+            self.healthcare.update()
 
         if self.iteration > 1 and new_mth:
-            self.government.accounting(self)
+            self.government.accounting()
 
         contacts = []
 
@@ -311,15 +263,6 @@ class GraphSimulation(Simulation):
             self.contact(ai, aj)
             self.contact(aj, ai)
 
-        if len(self.triggers_simulation) > 0:
-            for trigger in self.triggers_simulation:
-                if trigger['condition'](self):
-                    attr = trigger['attribute']
-                    if attr == 'execute':
-                        trigger['action'](self)
-                    else:
-                        self.__dict__[attr] = trigger['action'](self)
-
         self.statistics = None
 
     def contact(self, agent1, agent2):
@@ -329,6 +272,9 @@ class GraphSimulation(Simulation):
         :param agent1: an instance of agents.Agent
         :param agent2: an instance of agents.Agent
         """
+
+        if self.callback('on_contact', agent1, agent2):
+            return
 
         if agent1.status == Status.Susceptible and agent2.status == Status.Infected:
             low = np.random.randint(-1, 1)
