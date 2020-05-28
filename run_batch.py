@@ -1,4 +1,5 @@
 from covid_abs.graphics import *
+from covid_abs.experiments import *
 from covid_abs.network.graph_abs import *
 from covid_abs.network.util import *
 import numpy as np
@@ -175,7 +176,7 @@ scenario9 = dict(
         'on_execute': lambda x: sleep(x) ,
         'post_initialize': lambda x: sample_isolated(x, isolation_rate=.6, list_isolated=isolated),
         'on_person_move': lambda x: check_isolation(isolated, x),
-        'on_initialize': lambda x: pset(x, 'contagion_rate', 0.05)
+        'on_initialize': lambda x: pset(x, 'contagion_rate', 0.1)
     }
 )
 
@@ -184,13 +185,21 @@ scenario9 = dict(
 #'''
 #np.random.seed(1)
 
-for scenario in [scenario8]: #scenario0, scenario1, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8]:
+for scenario in [scenario0, scenario1, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
+    '''
     sim = GraphSimulation(
         **{**global_parameters, **scenario}
     )
     anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
 
     anim.save("{}_new.mp4".format(scenario['name']), writer='ffmpeg', fps=60)
+    '''
+    print(scenario['name'])
+    batch_experiment(35, 1440, "{}_new.csv".format(scenario['name']),
+                     simulation_type=GraphSimulation,
+                     verbose='experiments',
+                     **{**global_parameters, **scenario}
+                     )
 
 '''
 sim.append_trigger_simulation(

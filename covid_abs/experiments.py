@@ -149,29 +149,35 @@ def batch_experiment(experiments, iterations, file, simulation_type=Simulation, 
     rows = []
     columns = None
     for experiment in range(experiments):
-        if verbose == 'experiments':
-            print('Experiment {}'.format(experiment))
-        sim = simulation_type(**kwargs)
-        sim.initialize()
-        if columns is None:
-            statistics = sim.get_statistics(kind='all')
-            columns = [k for k in statistics.keys()]
-        for it in range(iterations):
-            if verbose == 'iterations':
-                print('Experiment {}\tIteration {}'.format(experiment, it))
-            sim.execute()
-            statistics = sim.get_statistics(kind='all')
-            statistics['iteration'] = it
-            rows.append(statistics)
+        try:
+            if verbose == 'experiments':
+                print('Experiment {}'.format(experiment))
+            sim = simulation_type(**kwargs)
+            sim.initialize()
+            if columns is None:
+                statistics = sim.get_statistics(kind='all')
+                columns = [k for k in statistics.keys()]
+            for it in range(iterations):
+                if verbose == 'iterations':
+                    print('Experiment {}\tIteration {}'.format(experiment, it))
+                sim.execute()
+                statistics = sim.get_statistics(kind='all')
+                statistics['iteration'] = it
+                rows.append(statistics)
+        except Exception as ex:
+            print("Exception occurred in experiment {}: {}".format(experiment, ex))
 
     df = pd.DataFrame(rows, columns=[k for k in statistics.keys()])
 
     rows2 = []
     for it in range(iterations):
-        df2 = df[(df['iteration'] == it)]
-        for col in columns:
-            row = [it, col, df2[col].values.min(), df2[col].values.mean(), df2[col].values.std(), df2[col].values.max()]
-            rows2.append(row)
+        try:
+            df2 = df[(df['iteration'] == it)]
+            for col in columns:
+                row = [it, col, df2[col].values.min(), df2[col].values.mean(), df2[col].values.std(), df2[col].values.max()]
+                rows2.append(row)
+        except Exception as ex:
+            print(ex)
 
     print(rows2)
 
