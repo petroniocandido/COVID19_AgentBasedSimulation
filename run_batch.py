@@ -4,6 +4,43 @@ from covid_abs.network.util import *
 import numpy as np
 
 
+def sleep(a):
+    if not new_day(a.iteration) and bed_time(a.iteration):
+        return True
+    #elif 9 <= a.iteration % 24 <= 11 and 14 <= a.iteration % 24 <= 16:
+    #    return True
+    return False
+
+
+def lockdown(a):
+    if a.house is not None:
+        a.house.checkin(a)
+    return True
+
+
+def conditional_lockdown(a):
+    if a.environment.get_statistics()['Infected'] > .05:
+        return lockdown(a)
+    else:
+        return False
+
+isolated = []
+
+
+def sample_isolated(environment, isolation_rate=.5, list_isolated=isolated):
+    for a in environment.population:
+        test = np.random.rand()
+        if test <= isolation_rate:
+            list_isolated.append(a.id)
+
+
+def check_isolation(list_isolated, agent):
+    if agent.id in list_isolated:
+        agent.move_to_home()
+        return True
+    return False
+
+
 global_parameters = dict(
 
     # General Parameters
@@ -21,7 +58,7 @@ global_parameters = dict(
     },
 
     # Epidemiological
-    critical_limit=0.05,
+    critical_limit=0.01,
     contagion_rate=.9,
     incubation_time=5,
     contagion_time=10,
@@ -38,30 +75,12 @@ global_parameters = dict(
     business_distance=20
 )
 
-def sleep(a):
-    if not new_day(a.iteration) and bed_time(a.iteration):
-        return True
-
-
-def lockdown(a):
-    if a.house is not None:
-        a.house.checkin(a)
-    return True
-
-
-def conditional_lockdown(a):
-    if a.environment.get_statistics()['Infected'] > .05:
-        return lockdown(a)
-    else:
-        return False
-
-
 scenario0 = dict(
     name='scenario0',
     initial_infected_perc=.0,
     initial_immune_perc=1.,
     contagion_distance=1.,
-    callbacks={'on_execute': lambda x: sleep(x) }
+    #callbacks={'on_execute': lambda x: sleep(x) }
 )
 
 scenario1 = dict(
@@ -94,18 +113,84 @@ scenario4 = dict(
     }
 )
 
+scenario5 = dict(
+    name='scenario5',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=.4, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+scenario6 = dict(
+    name='scenario6',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=.5, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+scenario7 = dict(
+    name='scenario7',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=.6, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+def pset(x, property, value):
+    x.__dict__[property] = value
+    return False
+
+
+scenario8 = dict(
+    name='scenario8',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=.05,
+    callbacks={
+        'on_execute': lambda x: sleep(x) ,
+        'on_initialize': lambda x: pset(x, 'contagion_rate', 0.1)
+    }
+)
+
+scenario9 = dict(
+    name='scenario9',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=.05,
+    callbacks={
+        'on_execute': lambda x: sleep(x) ,
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=.6, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x),
+        'on_initialize': lambda x: pset(x, 'contagion_rate', 0.05)
+    }
+)
+
 #np.random.seed(1)
 
 #'''
 #np.random.seed(1)
 
-for scenario in [scenario0, scenario1, scenario3, scenario4]:
+for scenario in [scenario8]: #scenario0, scenario1, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8]:
     sim = GraphSimulation(
         **{**global_parameters, **scenario}
     )
     anim = execute_graphsimulation(sim, iterations=1440, iteration_time=25)
 
-    anim.save("{}.mp4".format(scenario['name']), writer='ffmpeg', fps=60)
+    anim.save("{}_new.mp4".format(scenario['name']), writer='ffmpeg', fps=60)
 
 '''
 sim.append_trigger_simulation(

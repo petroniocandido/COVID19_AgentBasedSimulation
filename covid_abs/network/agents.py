@@ -132,6 +132,8 @@ class Business(Agent):
         self.incomes = 0
         self.sales = 0
 
+        self.environment.callback('post_business_accounting', self)
+
     def update(self):
         if self.environment.callback('on_business_update', self):
             return 
@@ -152,6 +154,8 @@ class Business(Agent):
             # This represents the public spending in the local economy
             ix = np.random.randint(0, self.environment.total_business)
             self.environment.business[ix].supply(self)
+
+        self.environment.callback('post_business_update', self)
 
 
 class House(Agent):
@@ -209,6 +213,8 @@ class House(Agent):
         self.incomes = 0
         self.expenses = 0
 
+        self.environment.callback('post_house_accounting', self)
+
     def update(self):
         if self.environment.callback('on_house_update', self):
             return 
@@ -221,6 +227,8 @@ class House(Agent):
             ix = np.random.randint(0, self.environment.total_business)
             self.environment.business[ix].cash(self.fixed_expenses/10)
         '''
+
+        self.environment.callback('post_house_update', self)
 
 
 class Person(Agent):
@@ -277,9 +285,11 @@ class Person(Agent):
             elif self.employer is None:
                 self.move_freely()
 
+        self.environment.callback('post_person_move', self)
+        self.environment.callback('post_person_move_to_work', self)
+
     def move_to_home(self):
-        if self.environment.callback('on_person_move', self) or \
-                self.environment.callback('on_person_move_to_home', self):
+        if self.environment.callback('on_person_move_to_home', self):
             return
 
         if self.infected_status != InfectionSeverity.Asymptomatic:
@@ -294,9 +304,10 @@ class Person(Agent):
             self.wealth -= self.incomes / 720
             self.move_freely()
 
+        self.environment.callback('post_person_move_to_home', self)
+
     def move_freely(self):
-        if self.environment.callback('on_person_move', self) or \
-                self.environment.callback('on_person_move_freely', self):
+        if self.environment.callback('on_person_move_freely', self):
             return
 
         if self.infected_status != InfectionSeverity.Asymptomatic:
@@ -306,9 +317,10 @@ class Person(Agent):
         self.x = int(self.x + x)
         self.y = int(self.y + y)
 
+        self.environment.callback('post_person_move_freely', self)
+
     def move_to(self, agent):
-        if self.environment.callback('on_person_move', self) or \
-                self.environment.callback('on_person_move_to', self, agent):
+        if self.environment.callback('on_person_move_to', self, agent):
             return
 
         x, y = np.random.normal(0.0, 0.25, 2)
@@ -316,6 +328,8 @@ class Person(Agent):
         self.y = int(agent.y + y)
 
         agent.checkin(self)
+
+        self.environment.callback('post_person_move_to', self)
 
     def check_balance(self, value):
         if self.house is not None:
@@ -375,3 +389,5 @@ class Person(Agent):
                 self.infected_time = 0
                 self.status = Status.Recovered_Immune
                 self.infected_status = InfectionSeverity.Asymptomatic
+
+        self.environment.callback('post_person_update', self)

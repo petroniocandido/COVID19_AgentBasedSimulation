@@ -89,6 +89,9 @@ class GraphSimulation(Simulation):
         """
         Initializate the Simulation by creating its population of agents
         """
+
+        self.callback('on_initialize', self)
+
         x, y = self.random_position()
         self.healthcare = Business(x=x, y=y, status=Status.Susceptible, type=AgentType.Healthcare, environment=self)
         self.healthcare.fixed_expenses += self.minimum_expense * 3
@@ -181,13 +184,14 @@ class GraphSimulation(Simulation):
                         ix = np.random.randint(0, nhouses)
                         self.houses[ix].append_mate(agent)
 
+        self.callback('post_initialize', self)
+
     def execute(self):
 
         self.iteration += 1
 
         if self.callback('on_execute', self):
             return
-
 
         #print(self.iteration)
 
@@ -204,14 +208,17 @@ class GraphSimulation(Simulation):
 
         for agent in filter(lambda x: x.status != Status.Death, self.population):
 
-            if bed:
-                agent.move_to_home()
+            if not self.callback('on_person_move', agent):
+                if bed:
+                    agent.move_to_home()
 
-            elif lunch or free or not work_dy:
-                agent.move_freely()
+                elif lunch or free or not work_dy:
+                    agent.move_freely()
 
-            elif work_dy and work:
-                agent.move_to_work()
+                elif work_dy and work:
+                    agent.move_to_work()
+
+            self.callback('post_person_move', agent)
 
             #agent.x = self._xclip(agent.x)
             #agent.y = self._yclip(agent.y)
@@ -265,6 +272,8 @@ class GraphSimulation(Simulation):
 
         self.statistics = None
 
+        self.callback('post_execute', self)
+
     def contact(self, agent1, agent2):
         """
         Performs the actions needed when two agents get in touch.
@@ -286,6 +295,8 @@ class GraphSimulation(Simulation):
                 if contagion_test <= self.contagion_rate:
                     agent1.status = Status.Infected
                     agent1.infection_status = InfectionSeverity.Asymptomatic
+
+        self.callback('post_contact', agent1, agent2)
 
     def get_statistics(self, kind='all'):
         if self.statistics is None:
