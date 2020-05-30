@@ -41,6 +41,13 @@ def check_isolation(list_isolated, agent):
         return True
     return False
 
+def vertical_isolation(a):
+  if a.economical_status == EconomicalStatus.Inactive:
+    if a.house is not None:
+      a.house.checkin(a)
+    return True
+  return False
+
 
 global_parameters = dict(
 
@@ -92,6 +99,17 @@ scenario1 = dict(
     callbacks={'on_execute': lambda x: sleep(x) }
 )
 
+scenario2 = dict(
+    name='scenario2',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_execute': lambda x: sleep(x),
+        'on_person_move': lambda x: lockdown(x)
+    }
+)
+
 scenario3 = dict(
     name='scenario3',
     initial_infected_perc=.01,
@@ -99,7 +117,7 @@ scenario3 = dict(
     contagion_distance=1.,
     callbacks={
         'on_execute': lambda x: sleep(x),
-        'on_person_move': lambda x: lockdown(x)
+        'on_person_move': lambda x: conditional_lockdown(x)
     }
 )
 
@@ -110,7 +128,7 @@ scenario4 = dict(
     contagion_distance=1.,
     callbacks={
         'on_execute': lambda x: sleep(x),
-        'on_person_move': lambda x: conditional_lockdown(x)
+        'on_person_move': lambda x: vertical_isolation(x)
     }
 )
 
@@ -185,7 +203,7 @@ scenario9 = dict(
 #'''
 #np.random.seed(1)
 
-for scenario in [scenario0, scenario1, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
+for scenario in [scenario7]: #scenario0, scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
     '''
     sim = GraphSimulation(
         **{**global_parameters, **scenario}
