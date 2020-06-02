@@ -198,12 +198,25 @@ scenario9 = dict(
     }
 )
 
+scenario10 = dict(
+    name='scenario10',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=.05,
+    callbacks={
+        'on_execute': lambda x: sleep(x) ,
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=.5, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x),
+        'on_initialize': lambda x: pset(x, 'contagion_rate', 0.1)
+    }
+)
+
 #np.random.seed(1)
 
 #'''
 #np.random.seed(1)
 
-for scenario in [scenario7]: #scenario0, scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
+for scenario in [scenario10]: #scenario0, scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
     '''
     sim = GraphSimulation(
         **{**global_parameters, **scenario}
