@@ -80,8 +80,7 @@ def plot_batch_results(df, health_metrics=('Susceptible', 'Infected', 'Hospitali
     lgd = ax[1].legend(handles, labels, loc='top left')
 
 
-def plot_graph_batch_results(df, health_metrics=('Susceptible', 'Infected', 'Hospitalization', 'Severe', 'Recovered_Immune', 'Death'),
-                       ecom_metrics=('Q1', 'Q2', 'Q3', 'Q4', 'Q5','Business','Government'), **kwargs):
+def plot_graph_batch_results(df, **kwargs):
     """
     Plot the results of a batch executions contained in the given DataFrame
     :param ecom_metrics:
@@ -90,6 +89,23 @@ def plot_graph_batch_results(df, health_metrics=('Susceptible', 'Infected', 'Hos
     """
     from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                    AutoMinorLocator)
+    A1 = ['Q1','Q2','Q3','Q4','Q5']
+
+    health_metrics=('Susceptible', 'Infected', 'Hospitalization', 'Severe', 'Recovered_Immune', 'Death')
+    ecom_metrics=('Q1', 'Q2', 'Q3', 'Q4', 'Q5','Business','Government')
+
+    health_legend={'Susceptible': '$S_t$ - Susceptible', 'Infected':'$I_t$ - Infected', 
+                   'Hospitalization':'$S^H_t$ - Hospitalization', 'Severe':'$I^S_t$ - Severe', 
+                   'Recovered_Immune':'$R_t$ - Recovered', 'Death':'$D_t$ - Death'}
+
+    ecom_legend = {'A1': '$W^{A1}_t$ - People',
+              'Business': '$W^{A3}_t$ - Business',
+              'Government': '$W^{A4}_t$ - Government',}
+
+    colors = {'A1': 'purple',
+              'Business': 'red',
+              'Government': 'brown',}
+    epidem = kwargs.get('epidem', True)
 
     iterations = max(df['Iteration'].values) + 1
 
@@ -97,41 +113,55 @@ def plot_graph_batch_results(df, health_metrics=('Susceptible', 'Infected', 'Hos
 
     tickslabels = [str(i // 24) for i in range(0, iterations, tick_unit)]
 
-    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=[20, 5])
+    fig, ax = plt.subplots(nrows=1, ncols=1 if not epidem else 2, figsize=[15, 4])
 
-    ax[0].set_title('Average Contagion Evolution')
-    ax[0].set_xlabel("Nº of Days")
-    ax[0].set_ylabel("% of Population")
-    ax[0].set_xlim((0, iterations))
-    ax[0].xaxis.set_major_locator(MultipleLocator(tick_unit))
-    ax[0].set_xticklabels(tickslabels)
+    if epidem:
+      ep_ax = ax[0]
+      ep_ax.set_title('Average Epidemiological Evolution')
+      ep_ax.set_xlabel("Nº of Days")
+      ep_ax.set_ylabel("% of Population")
+      ep_ax.set_xlim((0, iterations))
+      ep_ax.xaxis.set_major_locator(MultipleLocator(tick_unit))
+      ep_ax.set_xticklabels(tickslabels)
 
-    for col in health_metrics:
+      for col in health_metrics:
+          means = df[(df["Metric"] == col)]['Avg'].values
+          std = df[(df["Metric"] == col)]['Std'].values
+          plot_mean_std(ep_ax, means, std, legend=health_legend[col], color=color1(col))
+
+      handles, labels = ep_ax.get_legend_handles_labels()
+      lgd = ep_ax.legend(handles, labels, loc=2, bbox_to_anchor=(1, 1))
+
+    ec_ax = ax[1] if epidem else ax
+
+    ec_ax.set_title('Average Economical Impact')
+    ec_ax.set_xlabel("Nº of Days")
+    ec_ax.set_ylabel("% of GDP")
+    ec_ax.set_xlim((0, iterations))
+    ec_ax.xaxis.set_major_locator(MultipleLocator(tick_unit))
+    ec_ax.set_xticklabels(tickslabels)
+
+    for col in ecom_legend.keys():
+      if col == 'A1':
+        means = np.zeros(iterations)
+        std = np.zeros(iterations)
+        for m2 in A1: 
+          means += df[(df["Metric"] == m2)]['Avg'].values  
+          std += df[(df["Metric"] == m2)]['Std'].values
+      else:  
         means = df[(df["Metric"] == col)]['Avg'].values
         std = df[(df["Metric"] == col)]['Std'].values
-        plot_mean_std(ax[0], means, std, legend=col, color=color1(col))
+      l = len(means)
+      lb = [means[k] - std[k] for k in range(l)]
+      ub = [means[k] + std[k] for k in range(l)]
 
-    handles, labels = ax[0].get_legend_handles_labels()
-    lgd = ax[0].legend(handles, labels, loc='top right')
+      ec_ax.fill_between(range(l), ub, lb, color=colors[col], alpha=.4)
+      ec_ax.plot(range(l), means, colors[col], label=ecom_legend[col])
 
-    ax[1].set_title('Average Economical Impact')
-    ax[1].set_xlabel("Nº of Days")
-    ax[1].set_ylabel("% of Wealth")
-    ax[1].set_xlim((0, iterations))
-    ax[1].xaxis.set_major_locator(MultipleLocator(tick_unit))
-    ax[1].set_xticklabels(tickslabels)
+    handles, labels = ec_ax.get_legend_handles_labels()
+    lgd = ec_ax.legend(handles, labels, loc=2, bbox_to_anchor=(1, 1))
 
-    for col in ecom_metrics:
-        means = df[(df["Metric"] == col)]['Avg'].values
-        #n_mean = np.interp(means, (mmin, mmax), (0, 1))
-        std = df[(df["Metric"] == col)]['Std'].values
-        #n_std = np.interp(std, (smin, smax), (0, 1))
-        #ax[1].plot(means, label=legend_ecom[col])
-        # std = np.log10(df[(df["Metric"] == col)]['Std'].values)
-        plot_mean_std(ax[1], means, std, legend=legend_ecom[col], color=color3(col))
-
-    handles, labels = ax[1].get_legend_handles_labels()
-    lgd = ax[1].legend(handles, labels, loc='top left')
+    plt.tight_layout()
 
 
 def batch_experiment(experiments, iterations, file, simulation_type=Simulation, **kwargs):
