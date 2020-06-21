@@ -211,12 +211,27 @@ scenario10 = dict(
     }
 )
 
+scenarios = []
+
+for rate in [.4, .5, .6, .7, .8, .9]:
+    tmp = dict(
+        name='partialisolation{}'.format(rate),
+        initial_infected_perc=.01,
+        initial_immune_perc=.01,
+        contagion_distance=.05,
+        callbacks={
+            'post_initialize': lambda x: sample_isolated(x, isolation_rate=rate, list_isolated=isolated),
+            'on_person_move': lambda x: check_isolation(isolated, x)
+        }
+    )
+    scenarios.append(tmp)
+
 #np.random.seed(1)
 
 #'''
 #np.random.seed(1)
 
-for scenario in [scenario10]: #scenario0, scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
+for scenario in scenarios:  #scenario0, scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
     '''
     sim = GraphSimulation(
         **{**global_parameters, **scenario}
@@ -226,7 +241,7 @@ for scenario in [scenario10]: #scenario0, scenario1, scenario2, scenario3, scena
     anim.save("{}_new.mp4".format(scenario['name']), writer='ffmpeg', fps=60)
     '''
     print(scenario['name'])
-    batch_experiment(35, 1440, "{}_new.csv".format(scenario['name']),
+    batch_experiment(15, 1440, "{}.csv".format(scenario['name']),
                      simulation_type=GraphSimulation,
                      verbose='experiments',
                      **{**global_parameters, **scenario}
