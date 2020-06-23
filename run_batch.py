@@ -218,8 +218,9 @@ for rate in [.4, .5, .6, .7, .8, .9]:
         name='partialisolation{}'.format(rate),
         initial_infected_perc=.01,
         initial_immune_perc=.01,
-        contagion_distance=.05,
+        contagion_distance=1.,
         callbacks={
+            'on_execute': lambda x: sleep(x),
             'post_initialize': lambda x: sample_isolated(x, isolation_rate=rate, list_isolated=isolated),
             'on_person_move': lambda x: check_isolation(isolated, x)
         }
@@ -241,7 +242,8 @@ for scenario in scenarios:  #scenario0, scenario1, scenario2, scenario3, scenari
     anim.save("{}_new.mp4".format(scenario['name']), writer='ffmpeg', fps=60)
     '''
     print(scenario['name'])
-    batch_experiment(15, 1440, "{}.csv".format(scenario['name']),
+    isolated = []
+    batch_experiment(35, 1440, "{}.csv".format(scenario['name']),
                      simulation_type=GraphSimulation,
                      verbose='experiments',
                      **{**global_parameters, **scenario}
