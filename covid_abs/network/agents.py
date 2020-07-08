@@ -42,6 +42,8 @@ class Business(Agent):
             self.fixed_expenses += (agent.expenses / 720) * 24
 
     def fire(self, agent):
+        if self.environment.callback('on_business_fire', self):
+            return
         self.employees.remove(agent)
         #self.labor_expenses[agent.id] = None
         agent.employer = None
@@ -52,6 +54,8 @@ class Business(Agent):
 
     def demand(self, agent):
         """Expenses due to employee payments"""
+        if self.environment.callback('on_business_demand', self):
+            return
         labor = 0
         if agent in self.employees:
             #labor = self.labor_expenses[agent.id]
@@ -73,6 +77,8 @@ class Business(Agent):
 
     def supply(self, agent):
         """Incomes due to selling product/service"""
+        if self.environment.callback('on_business_supply', self):
+            return
         qty = np.random.randint(1, 10)
         if qty > self.stocks:
             qty = self.stocks
@@ -88,6 +94,10 @@ class Business(Agent):
 
     def checkin(self, agent):
         """Employee is working"""
+
+        if self.environment.callback('on_business_checkin', self):
+            return
+
         if self.type == AgentType.Business:
             self.stocks += 1
             self.cash(-agent.expenses/720)
@@ -190,17 +200,29 @@ class House(Agent):
         self.fixed_expenses -= (agent.expenses / 720) * 24
 
     def checkin(self, agent):
+        if self.environment.callback('on_house_checkin', self):
+            return
         self.demand(agent.expenses/720)
+
+        self.environment.callback('post_house_checkin', self)
 
     def demand(self, value = 0.0):
         """Expense of consuming product/services"""
+        if self.environment.callback('on_house_demand', self):
+            return
         self.wealth -= value
         self.expenses += value
+        self.environment.callback('post_house_demand', self)
 
     def supply(self, value = 0.0):
         """Income of work"""
+        if self.environment.callback('on_house_supply', self):
+            return
+
         self.wealth += value
         self.incomes += value
+
+        self.environment.callback('post_house_supply', self)
 
     def accounting(self):
         if self.environment.callback('on_house_accounting', self):

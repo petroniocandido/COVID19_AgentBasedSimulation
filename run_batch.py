@@ -41,6 +41,7 @@ def check_isolation(list_isolated, agent):
         return True
     return False
 
+
 def vertical_isolation(a):
   if a.economical_status == EconomicalStatus.Inactive:
     if a.house is not None:
@@ -52,8 +53,8 @@ def vertical_isolation(a):
 global_parameters = dict(
 
     # General Parameters
-    length=1000,
-    height=1000,
+    length=500,
+    height=500,
 
     # Demographic
     population_size=300,
@@ -211,28 +212,164 @@ scenario10 = dict(
     }
 )
 
-scenarios = []
 
-for rate in [.4, .5, .6, .7, .8, .9]:
-    tmp = dict(
-        name='partialisolation{}'.format(rate),
-        initial_infected_perc=.01,
-        initial_immune_perc=.01,
-        contagion_distance=1.,
-        callbacks={
-            'on_execute': lambda x: sleep(x),
-            'post_initialize': lambda x: sample_isolated(x, isolation_rate=rate, list_isolated=isolated),
-            'on_person_move': lambda x: check_isolation(isolated, x)
-        }
-    )
-    scenarios.append(tmp)
+def reset(lista):
+    lista = []
 
-#np.random.seed(1)
 
-#'''
-#np.random.seed(1)
+part_isol0 = dict(
+    name='partialisolation0.0',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        #'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        #'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.1, list_isolated=isolated),
+        #'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
 
-for scenario in scenarios:  #scenario0, scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
+part_isol11 = dict(
+    name='partialisolation1.0',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=1., list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+part_isol1 = dict(
+    name='partialisolation0.1',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.1, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+part_isol2 = dict(
+    name='partialisolation0.2',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.2, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+part_isol3 = dict(
+    name='partialisolation0.3',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.3, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+part_isol4 = dict(
+    name='partialisolation0.4',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.4, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+part_isol5 = dict(
+    name='partialisolation0.5',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.5, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+part_isol6 = dict(
+    name='partialisolation0.6',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.6, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+part_isol7 = dict(
+    name='partialisolation0.7',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.7, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+part_isol8 = dict(
+    name='partialisolation0.8',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.8, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+part_isol9 = dict(
+    name='partialisolation0.9',
+    initial_infected_perc=.01,
+    initial_immune_perc=.01,
+    contagion_distance=1.,
+    callbacks={
+        'on_initialize': lambda x: reset(isolated),
+        'on_execute': lambda x: sleep(x),
+        'post_initialize': lambda x: sample_isolated(x, isolation_rate=0.9, list_isolated=isolated),
+        'on_person_move': lambda x: check_isolation(isolated, x)
+    }
+)
+
+
+#for scenario in scenario0, scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]:
+for part_isol in [part_isol0, part_isol11]:
     '''
     sim = GraphSimulation(
         **{**global_parameters, **scenario}
@@ -241,12 +378,13 @@ for scenario in scenarios:  #scenario0, scenario1, scenario2, scenario3, scenari
 
     anim.save("{}_new.mp4".format(scenario['name']), writer='ffmpeg', fps=60)
     '''
-    print(scenario['name'])
+    #print(scenario['name'])
+
     isolated = []
-    batch_experiment(35, 1440, "{}.csv".format(scenario['name']),
+    batch_experiment(5, 1440, "{}.csv".format(part_isol['name']),
                      simulation_type=GraphSimulation,
                      verbose='experiments',
-                     **{**global_parameters, **scenario}
+                     **{**global_parameters, **part_isol}
                      )
 
 '''

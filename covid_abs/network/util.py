@@ -1,12 +1,32 @@
+
+
 def number_of_days(iteration):
+    """
+    Transform the iteration number in number of days
+
+    :param iteration: int
+    :return: number of days
+    """
     return iteration // 24
 
 
 def check_time(iteration, start, end):
+    """
+    Test if the iteration falls between a range of hours
+
+    :param iteration:
+    :param start: [0, 24]
+    :param end: [0, 24]
+    :return: boolean
+    """
     return start <= iteration % 24 < end
 
 
 def new_day(iteration):
+    """
+    :param iteration:
+    :return:
+    """
     return iteration % 24 == 0
 
 
@@ -41,3 +61,27 @@ def lunch_time(iteration):
 
 def free_time(iteration):
     return check_time(iteration,17,24)
+
+
+def sleep(a):
+    if not new_day(a.iteration) and bed_time(a.iteration):
+        return True
+    return False
+
+
+def reset(_list):
+    _list = []
+
+
+def sample_isolated(environment, isolation_rate, list_isolated):
+    for a in environment.population:
+        test = np.random.rand()
+        if test <= isolation_rate:
+            list_isolated.append(a.id)
+
+
+def check_isolation(list_isolated, agent):
+    if agent.id in list_isolated:
+        agent.move_to_home()
+        return True
+    return False

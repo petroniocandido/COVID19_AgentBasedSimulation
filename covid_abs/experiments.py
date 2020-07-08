@@ -209,8 +209,6 @@ def batch_experiment(experiments, iterations, file, simulation_type=Simulation, 
         except Exception as ex:
             print(ex)
 
-    print(rows2)
-
     df2 = pd.DataFrame(rows2, columns=['Iteration', 'Metric', 'Min', 'Avg', 'Std', 'Max'])
 
     df2.to_csv(file, index=False)
