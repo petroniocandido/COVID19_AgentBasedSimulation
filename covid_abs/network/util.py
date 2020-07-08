@@ -1,4 +1,4 @@
-
+import numpy as np
 
 def number_of_days(iteration):
     """

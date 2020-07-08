@@ -4,7 +4,7 @@ Main code for Agent Based Simulation
 
 from covid_abs.agents import Status, InfectionSeverity, Agent
 from covid_abs.common import *
-
+import numpy as np
 
 def distance(a, b):
     return np.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2)

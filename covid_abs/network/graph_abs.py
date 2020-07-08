@@ -2,6 +2,7 @@
 Graph induced
 """
 
+import numpy as np
 from covid_abs.abs import *
 from covid_abs.agents import *
 from covid_abs.network.agents import EconomicalStatus, Business, House, Person
