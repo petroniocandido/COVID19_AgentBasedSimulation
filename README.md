@@ -15,7 +15,7 @@ Petrônio C. L. Silva <span itemscope itemtype="https://schema.org/Person"><a it
 <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/by-nc-sa.svg" alt="Creative Commons BY-NC-SA" />
 
 ## Texts
-* Journal Paaper: Chaos, Solitons & Fractals, 2020. Availabe in https://doi.org/10.1016/j.chaos.2020.110088
+* Journal Paper: Chaos, Solitons & Fractals, 2020. Availabe in https://doi.org/10.1016/j.chaos.2020.110088
 * Preprint on ArXiv, available at https://arxiv.org/abs/2006.10532
 * An early version of COVID_ABS was published on Towards Data Science, available at https://towardsdatascience.com/agent-based-simulation-of-covid-19-health-and-economical-effects-6aa4ae0ff397.
 * Talk in "COVID-19 Simulation Summit", <a href="https://www.youtube.com/watch?v=5T35goVvwGA">video</a> and <a href="https://bit.ly/covid_abs_slides">slides</a>
